@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { DiceContainer } from "./Dice";
 import { PlayerCard } from "./PlayerCard";
 import { rollDice, calculateScore } from "@/lib/gameUtils";
+import { useTurnNotification } from "@/hooks/useTurnNotification";
 import type { Database } from "@/integrations/supabase/types";
 
 type Game = Database["public"]["Tables"]["games"]["Row"];
@@ -38,6 +39,10 @@ export function GamePlay({
   const [hasRolledOnce, setHasRolledOnce] = useState(false);
 
   const isMyTurn = currentPlayer?.id === myPlayer?.id;
+  
+  // Turn notification with sound and vibration
+  useTurnNotification(isMyTurn);
+  
   const currentScore = calculateScore(dice.filter((_, i) => keptIndices.includes(i)));
   const potentialScore = calculateScore(dice);
 
@@ -138,11 +143,13 @@ export function GamePlay({
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
-            className="bg-card/80 backdrop-blur-sm rounded-2xl p-6 mb-6 card-glow"
+            className={`bg-card/80 backdrop-blur-sm rounded-2xl p-6 mb-6 card-glow ${
+              isMyTurn ? "ring-2 ring-primary animate-pulse" : ""
+            }`}
           >
             <div className="text-center mb-4">
-              <p className="text-sm text-muted-foreground mb-1">
-                {isMyTurn ? "Your Turn!" : `${currentPlayer?.name}'s Turn`}
+              <p className={`text-sm mb-1 ${isMyTurn ? "text-primary font-bold text-lg" : "text-muted-foreground"}`}>
+                {isMyTurn ? "🎲 Your Turn!" : `${currentPlayer?.name}'s Turn`}
               </p>
               {isMyTurn && (
                 <p className="text-xs text-muted-foreground">

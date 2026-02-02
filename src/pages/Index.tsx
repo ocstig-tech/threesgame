@@ -133,18 +133,45 @@ export default function Index() {
               </div>
 
               <div>
-                <Label htmlFor="bet">Bet Amount ($)</Label>
-                <Input
-                  id="bet"
-                  type="number"
-                  min={1}
-                  max={100}
-                  value={betAmount}
-                  onChange={(e) => setBetAmount(Number(e.target.value))}
-                  className="mt-1.5"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Each player pays the winner this amount
+                <Label htmlFor="bet">Bet Amount</Label>
+                <div className="flex items-center gap-2 mt-1.5">
+                  <Input
+                    id="bet"
+                    type="number"
+                    min={0}
+                    max={1000}
+                    value={betAmount}
+                    onChange={(e) => setBetAmount(Number(e.target.value))}
+                    className="text-center text-xl font-bold"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setBetAmount(0)}
+                    className="text-xs px-2"
+                  >
+                    Clear
+                  </Button>
+                </div>
+                
+                {/* Quick add credit chips */}
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {[5, 10, 20, 50].map((amount) => (
+                    <Button
+                      key={amount}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setBetAmount((prev) => prev + amount)}
+                      className="flex-1 min-w-[60px] bg-gradient-to-br from-amber-500/20 to-amber-600/20 border-amber-500/50 hover:from-amber-500/30 hover:to-amber-600/30 hover:border-amber-400 text-amber-200 font-bold transition-all active:scale-95"
+                    >
+                      +${amount}
+                    </Button>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Tap chips to add • Each player pays the winner
                 </p>
               </div>
 

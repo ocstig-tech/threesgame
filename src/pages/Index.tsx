@@ -13,6 +13,7 @@ export default function Index() {
   const { createGame, joinGame } = useGame(null);
   const [mode, setMode] = useState<"menu" | "create" | "join">("menu");
   const [name, setName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [roomCode, setRoomCode] = useState("");
   const [betAmount, setBetAmount] = useState(5);
   const [isLoading, setIsLoading] = useState(false);
@@ -25,7 +26,7 @@ export default function Index() {
 
     setIsLoading(true);
     try {
-      const code = await createGame(name.trim(), betAmount);
+      const code = await createGame(name.trim(), betAmount, phoneNumber.trim() || undefined);
       navigate(`/game/${code}`);
     } catch (error) {
       toast.error("Failed to create game");
@@ -47,7 +48,7 @@ export default function Index() {
 
     setIsLoading(true);
     try {
-      const code = await joinGame(roomCode.trim(), name.trim());
+      const code = await joinGame(roomCode.trim(), name.trim(), phoneNumber.trim() || undefined);
       navigate(`/game/${code}`);
     } catch (error) {
       toast.error("Game not found");
@@ -128,6 +129,20 @@ export default function Index() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Enter your name"
+                  className="mt-1.5"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="phone">
+                  Phone Number <span className="text-muted-foreground text-xs">(optional)</span>
+                </Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  placeholder="For payment coordination"
                   className="mt-1.5"
                 />
               </div>
@@ -215,6 +230,20 @@ export default function Index() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Enter your name"
+                  className="mt-1.5"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="joinPhone">
+                  Phone Number <span className="text-muted-foreground text-xs">(optional)</span>
+                </Label>
+                <Input
+                  id="joinPhone"
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  placeholder="For payment coordination"
                   className="mt-1.5"
                 />
               </div>

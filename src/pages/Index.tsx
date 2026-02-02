@@ -157,7 +157,7 @@ export default function Index() {
                 
                 {/* Quick add credit chips */}
                 <div className="flex flex-wrap gap-2 mt-3">
-                  {[5, 10, 20, 50].map((amount) => (
+                  {[2, 5, 10, 20].map((amount) => (
                     <Button
                       key={amount}
                       type="button"

@@ -6,6 +6,7 @@ import { DiceContainer } from "./Dice";
 import { PlayerCard } from "./PlayerCard";
 import { rollDice, calculateScore } from "@/lib/gameUtils";
 import { useTurnNotification } from "@/hooks/useTurnNotification";
+import { useDiceBroadcast } from "@/hooks/useDiceBroadcast";
 import type { Database } from "@/integrations/supabase/types";
 
 type Game = Database["public"]["Tables"]["games"]["Row"];
@@ -43,6 +44,15 @@ export function GamePlay({
   // Turn notification with sound and vibration
   useTurnNotification(isMyTurn);
   
+  // Live dice broadcasting
+  const {
+    remoteDice,
+    remoteIsRolling,
+    remotePlayerName,
+    broadcastDice,
+    clearRemoteDice,
+  } = useDiceBroadcast(game.room_code, myPlayer?.id || null);
+  
   const currentScore = calculateScore(dice.filter((_, i) => keptIndices.includes(i)));
   const potentialScore = calculateScore(dice);
 
@@ -60,16 +70,20 @@ export function GamePlay({
     if (!isMyTurn || rollsRemaining <= 0 || isRolling) return;
 
     setIsRolling(true);
+    
+    // Broadcast rolling state
+    broadcastDice(dice, myPlayer?.name || "Player", true);
 
-    // Simulate roll animation
+    // Simulate roll animation with broadcasting
     const animationDice = [...dice];
     for (let i = 0; i < 10; i++) {
       await new Promise((r) => setTimeout(r, 50));
-      setDice(
-        animationDice.map((d, idx) =>
-          keptIndices.includes(idx) ? d : rollDice(1)[0]
-        )
+      const frameDice = animationDice.map((d, idx) =>
+        keptIndices.includes(idx) ? d : rollDice(1)[0]
       );
+      setDice(frameDice);
+      // Broadcast each animation frame
+      broadcastDice(frameDice, myPlayer?.name || "Player", true);
     }
 
     // Final roll
@@ -80,6 +94,9 @@ export function GamePlay({
     setRollsRemaining((prev) => prev - 1);
     setHasRolledOnce(true);
     setIsRolling(false);
+    
+    // Broadcast final dice state (not rolling)
+    broadcastDice(newDice, myPlayer?.name || "Player", false);
   };
 
   const handleToggleKeep = (index: number) => {
@@ -198,25 +215,45 @@ export function GamePlay({
                 )}
               </>
             ) : (
-              <div className="flex justify-center gap-2">
-                {(currentPlayer?.kept_dice || []).map((die, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ delay: i * 0.1 }}
-                  >
-                    <div className="w-12 h-12 bg-secondary rounded-lg flex items-center justify-center">
-                      {die > 0 ? (
-                        <span className="text-xl font-bold">{die}</span>
-                      ) : (
-                        <span className="text-muted-foreground">?</span>
-                      )}
-                    </div>
-                  </motion.div>
-                ))}
-                {(currentPlayer?.kept_dice || []).length === 0 && (
-                  <p className="text-muted-foreground">Waiting for roll...</p>
+              <div className="flex flex-col items-center gap-4">
+                {/* Show live rolling dice from broadcast */}
+                {remoteDice.length > 0 && currentPlayer?.name === remotePlayerName ? (
+                  <DiceContainer
+                    dice={remoteDice}
+                    keptIndices={[]}
+                    onToggleKeep={() => {}}
+                    isRolling={remoteIsRolling}
+                    disabled={true}
+                  />
+                ) : (
+                  <div className="flex justify-center gap-2">
+                    {(currentPlayer?.kept_dice || []).map((die, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ delay: i * 0.1 }}
+                      >
+                        <div className="w-12 h-12 bg-secondary rounded-lg flex items-center justify-center">
+                          {die > 0 ? (
+                            <span className="text-xl font-bold">{die}</span>
+                          ) : (
+                            <span className="text-muted-foreground">?</span>
+                          )}
+                        </div>
+                      </motion.div>
+                    ))}
+                    {(currentPlayer?.kept_dice || []).length === 0 && !remoteIsRolling && (
+                      <p className="text-muted-foreground">Waiting for roll...</p>
+                    )}
+                  </div>
+                )}
+                
+                {/* Show rolling indicator */}
+                {remoteIsRolling && currentPlayer?.name === remotePlayerName && (
+                  <p className="text-sm text-primary animate-pulse">
+                    🎲 {remotePlayerName} is rolling...
+                  </p>
                 )}
               </div>
             )}

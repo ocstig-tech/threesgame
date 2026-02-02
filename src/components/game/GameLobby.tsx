@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Users, Play, Dice1 } from "lucide-react";
+import { Users, Play, Dice1, Share2, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PlayerCard } from "./PlayerCard";
+import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 
 type Game = Database["public"]["Tables"]["games"]["Row"];
@@ -26,10 +28,44 @@ export function GameLobby({
   onRollForTurn,
   onStartGame,
 }: GameLobbyProps) {
+  const [copied, setCopied] = useState(false);
+  
   const allRolled = players.every((p) => p.roll_off_value !== null);
   const hasRolled = myPlayer?.roll_off_value !== null;
   const isRollOff = game.status === "roll_off";
   const isTieBreaker = game.status === "tie_breaker";
+  
+  const gameUrl = `${window.location.origin}/game/${game.room_code}`;
+  
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(gameUrl);
+      setCopied(true);
+      toast.success("Link copied to clipboard!");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Failed to copy link");
+    }
+  };
+  
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Join my Threes game!",
+          text: `Join my Threes dice game! Room code: ${game.room_code}`,
+          url: gameUrl,
+        });
+      } catch (err) {
+        // User cancelled or share failed - fallback to copy
+        if ((err as Error).name !== "AbortError") {
+          handleCopyLink();
+        }
+      }
+    } else {
+      handleCopyLink();
+    }
+  };
 
   return (
     <div className="min-h-screen bg-felt p-4 md:p-8">
@@ -54,19 +90,46 @@ export function GameLobby({
           </div>
         </div>
 
-        {/* Room Code */}
+        {/* Room Code & Share */}
         <motion.div
           initial={{ scale: 0.9 }}
           animate={{ scale: 1 }}
           className="bg-card/50 backdrop-blur-sm rounded-2xl p-6 mb-6 text-center card-glow"
         >
           <p className="text-sm text-muted-foreground mb-2">Room Code</p>
-          <p className="text-4xl md:text-5xl font-mono font-bold text-primary tracking-widest">
+          <p className="text-4xl md:text-5xl font-mono font-bold text-primary tracking-widest mb-4">
             {game.room_code}
           </p>
-          <p className="text-xs text-muted-foreground mt-2">
-            Share this code with other players
-          </p>
+          
+          {/* Share buttons */}
+          <div className="flex flex-col gap-3">
+            <div className="bg-secondary/50 rounded-lg p-3">
+              <p className="text-xs text-muted-foreground mb-1">Share this link:</p>
+              <p className="text-sm font-mono text-foreground break-all">{gameUrl}</p>
+            </div>
+            
+            <div className="flex gap-2">
+              <Button
+                onClick={handleCopyLink}
+                variant="outline"
+                className="flex-1"
+              >
+                {copied ? (
+                  <Check className="w-4 h-4 mr-2 text-emerald-500" />
+                ) : (
+                  <Copy className="w-4 h-4 mr-2" />
+                )}
+                {copied ? "Copied!" : "Copy Link"}
+              </Button>
+              <Button
+                onClick={handleShare}
+                className="flex-1 gold-glow"
+              >
+                <Share2 className="w-4 h-4 mr-2" />
+                Share
+              </Button>
+            </div>
+          </div>
         </motion.div>
 
         {/* Instructions */}

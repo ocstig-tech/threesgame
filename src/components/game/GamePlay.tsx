@@ -1,12 +1,10 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Dice1, Check, RotateCcw, Trophy, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DiceContainer } from "./Dice";
 import { PlayerCard } from "./PlayerCard";
 import { rollDice, calculateScore } from "@/lib/gameUtils";
-import { useTurnNotification } from "@/hooks/useTurnNotification";
-import { useDiceBroadcast } from "@/hooks/useDiceBroadcast";
 import type { Database } from "@/integrations/supabase/types";
 
 type Game = Database["public"]["Tables"]["games"]["Row"];
@@ -43,14 +41,6 @@ export function GamePlay({
 
   const isMyTurn = currentPlayer?.id === myPlayer?.id;
   
-  // Turn notification with sound and vibration
-  useTurnNotification(isMyTurn);
-  
-  // Live dice broadcasting
-  const {
-    broadcastDice,
-  } = useDiceBroadcast(game.room_code, myPlayer?.id || null);
-  
   const currentScore = calculateScore(dice.filter((_, i) => keptIndices.includes(i)));
   const potentialScore = calculateScore(dice);
 
@@ -69,9 +59,6 @@ export function GamePlay({
 
     setIsRolling(true);
 
-    // Broadcast rolling state (single event; avoid per-frame re-renders that can look like flashing)
-    broadcastDice(dice, myPlayer?.name || "Player", true);
-
     // Let the dice component's framer-motion animation run briefly
     await new Promise((r) => setTimeout(r, 550));
 
@@ -83,9 +70,6 @@ export function GamePlay({
     setRollsRemaining((prev) => prev - 1);
     setHasRolledOnce(true);
     setIsRolling(false);
-
-    // Broadcast final dice state (not rolling)
-    broadcastDice(newDice, myPlayer?.name || "Player", false);
   };
 
   const handleToggleKeep = (index: number) => {
@@ -146,16 +130,11 @@ export function GamePlay({
         </div>
 
         {/* Current Turn Indicator */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentPlayer?.id}
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            className={`bg-card/80 backdrop-blur-sm rounded-2xl p-6 mb-6 card-glow ${
-              isMyTurn ? "ring-2 ring-primary animate-pulse" : ""
-            }`}
-          >
+        <div
+          className={`bg-card/80 backdrop-blur-sm rounded-2xl p-6 mb-6 card-glow ${
+            isMyTurn ? "ring-2 ring-primary" : ""
+          }`}
+        >
             {/* Between-rounds prompt */}
             {isBetweenRounds && (
               <div className="mb-5 rounded-xl border border-border bg-secondary/30 p-4 text-center">
@@ -280,9 +259,7 @@ export function GamePlay({
                 )}
               </div>
             )}
-          </motion.div>
-        </AnimatePresence>
-
+        </div>
         {/* Players Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {sortedPlayers.map((player) => (

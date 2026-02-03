@@ -168,6 +168,7 @@ export type Database = {
         | "playing"
         | "tie_breaker"
         | "finished"
+        | "between_rounds"
       player_status: "waiting" | "rolling" | "finished"
     }
     CompositeTypes: {
@@ -302,6 +303,7 @@ export const Constants = {
         "playing",
         "tie_breaker",
         "finished",
+        "between_rounds",
       ],
       player_status: ["waiting", "rolling", "finished"],
     },

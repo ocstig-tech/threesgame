@@ -20,6 +20,7 @@ interface GamePlayProps {
   onRollDice: (keptIndices: number[], currentDice: number[]) => Promise<number[] | null>;
   onKeepDice: (keptDice: number[], rollsRemaining: number) => Promise<void>;
   onEndTurn: (finalDice: number[]) => Promise<void>;
+  onStartNextRound: () => Promise<void>;
   onEndGame: () => Promise<void>;
 }
 
@@ -31,6 +32,7 @@ export function GamePlay({
   onRollDice,
   onKeepDice,
   onEndTurn,
+  onStartNextRound,
   onEndGame,
 }: GamePlayProps) {
   const [dice, setDice] = useState<number[]>([0, 0, 0, 0, 0]);
@@ -46,11 +48,7 @@ export function GamePlay({
   
   // Live dice broadcasting
   const {
-    remoteDice,
-    remoteIsRolling,
-    remotePlayerName,
     broadcastDice,
-    clearRemoteDice,
   } = useDiceBroadcast(game.room_code, myPlayer?.id || null);
   
   const currentScore = calculateScore(dice.filter((_, i) => keptIndices.includes(i)));
@@ -70,31 +68,22 @@ export function GamePlay({
     if (!isMyTurn || rollsRemaining <= 0 || isRolling) return;
 
     setIsRolling(true);
-    
-    // Broadcast rolling state
+
+    // Broadcast rolling state (single event; avoid per-frame re-renders that can look like flashing)
     broadcastDice(dice, myPlayer?.name || "Player", true);
 
-    // Simulate roll animation with broadcasting
-    const animationDice = [...dice];
-    for (let i = 0; i < 10; i++) {
-      await new Promise((r) => setTimeout(r, 50));
-      const frameDice = animationDice.map((d, idx) =>
-        keptIndices.includes(idx) ? d : rollDice(1)[0]
-      );
-      setDice(frameDice);
-      // Broadcast each animation frame
-      broadcastDice(frameDice, myPlayer?.name || "Player", true);
-    }
+    // Let the dice component's framer-motion animation run briefly
+    await new Promise((r) => setTimeout(r, 550));
 
-    // Final roll
-    const newDice = dice.map((d, idx) =>
-      keptIndices.includes(idx) ? d : rollDice(1)[0]
-    );
+    const newDice =
+      (await onRollDice(keptIndices, dice)) ??
+      dice.map((d, idx) => (keptIndices.includes(idx) ? d : rollDice(1)[0]));
+
     setDice(newDice);
     setRollsRemaining((prev) => prev - 1);
     setHasRolledOnce(true);
     setIsRolling(false);
-    
+
     // Broadcast final dice state (not rolling)
     broadcastDice(newDice, myPlayer?.name || "Player", false);
   };
@@ -133,6 +122,9 @@ export function GamePlay({
     (a, b) => (a.turn_order || 999) - (b.turn_order || 999)
   );
 
+  const isBetweenRounds = (game.status as unknown as string) === "between_rounds";
+  const isHost = players.length > 0 && players[0]?.session_id === myPlayer?.session_id;
+
   return (
     <div className="min-h-screen bg-felt p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
@@ -164,6 +156,26 @@ export function GamePlay({
               isMyTurn ? "ring-2 ring-primary animate-pulse" : ""
             }`}
           >
+            {/* Between-rounds prompt */}
+            {isBetweenRounds && (
+              <div className="mb-5 rounded-xl border border-border bg-secondary/30 p-4 text-center">
+                <p className="text-foreground font-medium">Round complete</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {isHost
+                    ? "Start the next round when everyone is ready."
+                    : "Waiting for the host to start the next round."}
+                </p>
+                {isHost && (
+                  <div className="mt-4 flex justify-center">
+                    <Button onClick={onStartNextRound} className="gold-glow" size="lg">
+                      <RotateCcw className="w-5 h-5 mr-2" />
+                      Start Next Round
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="text-center mb-4">
               <p className={`text-sm mb-1 ${isMyTurn ? "text-primary font-bold text-lg" : "text-muted-foreground"}`}>
                 {isMyTurn ? "🎲 Your Turn!" : `${currentPlayer?.name}'s Turn`}
@@ -176,7 +188,7 @@ export function GamePlay({
             </div>
 
             {/* Dice Area */}
-            {isMyTurn ? (
+            {isMyTurn && !isBetweenRounds ? (
               <>
                 <DiceContainer
                   dice={dice}
@@ -242,7 +254,7 @@ export function GamePlay({
             )}
 
             {/* Action Buttons */}
-            {isMyTurn && (
+            {isMyTurn && !isBetweenRounds && (
               <div className="flex gap-3 mt-6 justify-center">
                 {canRoll && (
                   <Button

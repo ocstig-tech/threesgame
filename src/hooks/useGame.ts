@@ -363,7 +363,10 @@ export function useGame(roomCode: string | null) {
       const losers = finishedPlayers.filter((p) => p.id !== winner.id);
 
       // Update earnings
-      const winAmount = losers.length * state.game.bet_amount;
+      // Winner takes the whole pot, but they've also contributed their share.
+      // Net profit = pot - (pot / players). Each loser loses their share.
+      const stakePerPlayer = Math.round(state.game.pot / Math.max(state.players.length, 1));
+      const winAmount = state.game.pot - stakePerPlayer;
       await supabase
         .from("players")
         .update({ total_earnings: (winner.total_earnings || 0) + winAmount })
@@ -373,7 +376,7 @@ export function useGame(roomCode: string | null) {
         await supabase
           .from("players")
           .update({
-            total_earnings: (loser.total_earnings || 0) - state.game.bet_amount,
+            total_earnings: (loser.total_earnings || 0) - stakePerPlayer,
           })
           .eq("id", loser.id);
       }
@@ -387,45 +390,64 @@ export function useGame(roomCode: string | null) {
         pot_amount: state.game.pot,
       });
 
-      // Reset for next round with winner going first
-      for (const player of state.players) {
-        await supabase
-          .from("players")
-          .update({
-            roll_off_value: null,
-            kept_dice: [],
-            rolls_remaining: 5,
-            current_score: null,
-            status: "waiting",
-            turn_order: null,
-          })
-          .eq("id", player.id);
-      }
-
-      // Winner rolls first, assign turn order
-      await supabase
-        .from("players")
-        .update({ turn_order: 1, status: "rolling" })
-        .eq("id", winner.id);
-
-      let order = 2;
-      for (const player of state.players.filter((p) => p.id !== winner.id)) {
-        await supabase
-          .from("players")
-          .update({ turn_order: order })
-          .eq("id", player.id);
-        order++;
-      }
-
+      // Pause after the round and let the host start the next round.
+      const BETWEEN_ROUNDS = "between_rounds" as unknown as Game["status"];
       await supabase
         .from("games")
         .update({
-          status: "playing",
-          pot: state.players.length * state.game.bet_amount,
+          status: BETWEEN_ROUNDS,
+          // Store who starts next round (winner goes first)
           current_player_id: winner.id,
         })
         .eq("id", state.game.id);
     }
+  };
+
+  // Start next round after a winner has been determined
+  const startNextRound = async () => {
+    if (!state.game) return;
+
+    const startingPlayerId = state.game.current_player_id;
+    if (!startingPlayerId) return;
+
+    // Reset all players for new round
+    for (const player of state.players) {
+      await supabase
+        .from("players")
+        .update({
+          roll_off_value: null,
+          kept_dice: [],
+          rolls_remaining: 5,
+          current_score: null,
+          status: "waiting",
+          turn_order: null,
+        })
+        .eq("id", player.id);
+    }
+
+    // Winner rolls first, assign turn order
+    await supabase
+      .from("players")
+      .update({ turn_order: 1, status: "rolling" })
+      .eq("id", startingPlayerId);
+
+    let order = 2;
+    for (const player of state.players.filter((p) => p.id !== startingPlayerId)) {
+      await supabase
+        .from("players")
+        .update({ turn_order: order })
+        .eq("id", player.id);
+      order++;
+    }
+
+    await supabase
+      .from("games")
+      .update({
+        status: "playing",
+        pot: state.players.length * state.game.bet_amount,
+        current_player_id: startingPlayerId,
+      })
+      .eq("id", state.game.id);
   };
 
   // End the game session
@@ -446,6 +468,7 @@ export function useGame(roomCode: string | null) {
     startRollOff,
     rollForTurnOrder,
     startGame,
+    startNextRound,
     rollDiceForTurn,
     keepDice,
     endTurn,

@@ -20,6 +20,7 @@ export default function Game() {
     startRollOff,
     rollForTurnOrder,
     startGame,
+    startNextRound,
     rollDiceForTurn,
     keepDice,
     endTurn,
@@ -90,6 +91,7 @@ export default function Game() {
       onRollDice={rollDiceForTurn}
       onKeepDice={keepDice}
       onEndTurn={endTurn}
+      onStartNextRound={startNextRound}
       onEndGame={endGame}
     />
   );

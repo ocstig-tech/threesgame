@@ -112,7 +112,7 @@ export function useGame(roomCode: string | null) {
   }, [roomCode, fetchGame]);
 
   // Create a new game
-  const createGame = async (hostName: string, betAmount: number, phoneNumber?: string) => {
+  const createGame = async (hostName: string, betAmount: number) => {
     const { generateRoomCode } = await import("@/lib/gameUtils");
     const newRoomCode = generateRoomCode();
 
@@ -133,7 +133,6 @@ export function useGame(roomCode: string | null) {
       game_id: game.id,
       name: hostName,
       session_id: sessionId,
-      phone_number: phoneNumber || null,
     });
 
     if (playerError) throw playerError;
@@ -142,7 +141,7 @@ export function useGame(roomCode: string | null) {
   };
 
   // Join an existing game
-  const joinGame = async (code: string, playerName: string, phoneNumber?: string) => {
+  const joinGame = async (code: string, playerName: string) => {
     const { data: game, error: gameError } = await supabase
       .from("games")
       .select("*")
@@ -167,7 +166,6 @@ export function useGame(roomCode: string | null) {
       game_id: game.id,
       name: playerName,
       session_id: sessionId,
-      phone_number: phoneNumber || null,
     });
 
     if (playerError) throw playerError;

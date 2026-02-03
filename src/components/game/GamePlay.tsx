@@ -216,45 +216,28 @@ export function GamePlay({
               </>
             ) : (
               <div className="flex flex-col items-center gap-4">
-                {/* Show live rolling dice from broadcast */}
-                {remoteDice.length > 0 && currentPlayer?.name === remotePlayerName ? (
-                  <DiceContainer
-                    dice={remoteDice}
-                    keptIndices={[]}
-                    onToggleKeep={() => {}}
-                    isRolling={remoteIsRolling}
-                    disabled={true}
-                  />
-                ) : (
-                  <div className="flex justify-center gap-2">
-                    {(currentPlayer?.kept_dice || []).map((die, i) => (
-                      <motion.div
-                        key={i}
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ delay: i * 0.1 }}
-                      >
-                        <div className="w-12 h-12 bg-secondary rounded-lg flex items-center justify-center">
-                          {die > 0 ? (
-                            <span className="text-xl font-bold">{die}</span>
-                          ) : (
-                            <span className="text-muted-foreground">?</span>
-                          )}
-                        </div>
-                      </motion.div>
-                    ))}
-                    {(currentPlayer?.kept_dice || []).length === 0 && !remoteIsRolling && (
-                      <p className="text-muted-foreground">Waiting for roll...</p>
-                    )}
-                  </div>
-                )}
-                
-                {/* Show rolling indicator */}
-                {remoteIsRolling && currentPlayer?.name === remotePlayerName && (
-                  <p className="text-sm text-primary animate-pulse">
-                    🎲 {remotePlayerName} is rolling...
-                  </p>
-                )}
+            {/* Show kept dice from the current player */}
+                <div className="flex justify-center gap-2">
+                  {(currentPlayer?.kept_dice || []).map((die, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: i * 0.1 }}
+                    >
+                      <div className="w-12 h-12 bg-secondary rounded-lg flex items-center justify-center">
+                        {die > 0 ? (
+                          <span className="text-xl font-bold">{die}</span>
+                        ) : (
+                          <span className="text-muted-foreground">?</span>
+                        )}
+                      </div>
+                    </motion.div>
+                  ))}
+                  {(currentPlayer?.kept_dice || []).length === 0 && (
+                    <p className="text-muted-foreground">Waiting for roll...</p>
+                  )}
+                </div>
               </div>
             )}
 

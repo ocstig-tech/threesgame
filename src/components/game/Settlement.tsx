@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Trophy, TrendingUp, TrendingDown, Minus, RotateCcw, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatCurrency } from "@/lib/gameUtils";
+import { formatChips } from "@/lib/gameUtils";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -52,7 +52,7 @@ export function Settlement({
             Game Over!
           </h1>
           <p className="text-muted-foreground">
-            {rounds.length} rounds played • ${betAmount} per round
+            {rounds.length} rounds played • {betAmount} chips per round
           </p>
         </div>
 
@@ -69,7 +69,7 @@ export function Settlement({
               {biggestWinner.name}
             </p>
             <p className="text-3xl font-bold text-emerald-400 mt-2">
-              {formatCurrency(biggestWinner.total_earnings)}
+              {formatChips(biggestWinner.total_earnings)} chips
             </p>
           </motion.div>
         )}
@@ -119,7 +119,7 @@ export function Settlement({
                         !isWinner && !isLoser && "text-muted-foreground"
                       )}
                     >
-                      {formatCurrency(earnings)}
+                      {formatChips(earnings)} chips
                     </span>
                   </div>
                 </motion.div>
@@ -138,8 +138,8 @@ export function Settlement({
                 const owes = Math.abs(loser.total_earnings || 0);
                 return (
                   <li key={loser.id}>
-                    <span className="text-foreground">{loser.name}</span> pays{" "}
-                    <span className="text-primary font-medium">${owes}</span>
+                    <span className="text-foreground">{loser.name}</span> owes{" "}
+                    <span className="text-primary font-medium">{owes} chips</span>
                   </li>
                 );
               })}

@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Dice } from "./Dice";
-import { formatCurrency } from "@/lib/gameUtils";
+import { formatChips } from "@/lib/gameUtils";
 
 interface PlayerCardProps {
   name: string;
@@ -93,7 +93,7 @@ export function PlayerCard({
             totalEarnings === 0 && "text-muted-foreground"
           )}
         >
-          {formatCurrency(totalEarnings)}
+          {formatChips(totalEarnings)}
         </span>
       </div>
     </motion.div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Users, Play, Dice1, Share2, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -29,11 +29,50 @@ export function GameLobby({
   onStartGame,
 }: GameLobbyProps) {
   const [copied, setCopied] = useState(false);
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const countdownStartedRef = useRef(false);
   
-  const allRolled = players.every((p) => p.roll_off_value !== null);
-  const hasRolled = myPlayer?.roll_off_value !== null;
   const isRollOff = game.status === "roll_off";
   const isTieBreaker = game.status === "tie_breaker";
+  
+  // In tie-breaker, only players without a roll need to roll
+  const playersNeedingRoll = isTieBreaker
+    ? players.filter((p) => p.roll_off_value === null)
+    : players;
+  
+  const allRolled = playersNeedingRoll.every((p) => p.roll_off_value !== null);
+  const hasRolled = myPlayer?.roll_off_value !== null;
+  const needsToRoll = isTieBreaker 
+    ? myPlayer?.roll_off_value === null 
+    : !hasRolled;
+
+  // 5-second countdown after all players have rolled
+  useEffect(() => {
+    if (allRolled && (isRollOff || isTieBreaker) && !countdownStartedRef.current) {
+      countdownStartedRef.current = true;
+      setCountdown(5);
+    }
+  }, [allRolled, isRollOff, isTieBreaker]);
+
+  useEffect(() => {
+    if (countdown === null || countdown <= 0) return;
+    
+    const timer = setTimeout(() => {
+      setCountdown(countdown - 1);
+    }, 1000);
+    
+    return () => clearTimeout(timer);
+  }, [countdown]);
+
+  // Reset countdown when entering new roll-off/tie-breaker
+  useEffect(() => {
+    if (!allRolled) {
+      countdownStartedRef.current = false;
+      setCountdown(null);
+    }
+  }, [allRolled]);
+
+  const canStartGame = allRolled && countdown === 0;
   
   const gameUrl = `${window.location.origin}/game/${game.room_code}`;
   
@@ -155,12 +194,28 @@ export function GameLobby({
           </div>
         )}
 
-        {isTieBreaker && (
+        {isTieBreaker && !allRolled && (
           <div className="bg-destructive/20 rounded-xl p-4 mb-6 text-center">
-            <p className="text-foreground font-medium">It's a Tie!</p>
+            <Dice1 className="w-8 h-8 text-destructive mx-auto mb-2" />
+            <p className="text-foreground font-medium">Tie Breaker!</p>
             <p className="text-sm text-muted-foreground">
-              Everyone adds another ${game.bet_amount} to the pot. Roll off again to determine turn order.
+              Tied players must roll again to determine who goes first.
             </p>
+          </div>
+        )}
+
+        {allRolled && (isRollOff || isTieBreaker) && (
+          <div className="bg-primary/20 rounded-xl p-4 mb-6 text-center">
+            <p className="text-foreground font-medium">All Rolls Complete!</p>
+            {countdown !== null && countdown > 0 ? (
+              <p className="text-2xl font-bold text-primary mt-2">
+                Starting in {countdown}...
+              </p>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {isHost ? "Ready to start!" : "Waiting for host to start..."}
+              </p>
+            )}
           </div>
         )}
 
@@ -179,7 +234,7 @@ export function GameLobby({
 
         {/* Actions */}
         <div className="flex flex-col gap-3">
-          {(isRollOff || isTieBreaker) && !hasRolled && (
+          {(isRollOff || isTieBreaker) && needsToRoll && (
             <Button
               onClick={onRollForTurn}
               size="lg"
@@ -190,7 +245,7 @@ export function GameLobby({
             </Button>
           )}
 
-          {(isRollOff || isTieBreaker) && allRolled && isHost && (
+          {(isRollOff || isTieBreaker) && canStartGame && isHost && (
             <Button
               onClick={onStartGame}
               size="lg"

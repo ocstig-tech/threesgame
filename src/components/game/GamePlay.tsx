@@ -4,6 +4,7 @@ import { Dice1, Check, RotateCcw, Trophy, Coins } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DiceContainer } from "./Dice";
 import { PlayerCard } from "./PlayerCard";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { rollDice, calculateScore } from "@/lib/gameUtils";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -114,7 +115,12 @@ export function GamePlay({
   const isHost = players.length > 0 && players[0]?.session_id === myPlayer?.session_id;
 
   return (
-    <div className="min-h-screen bg-felt p-4 md:p-8">
+    <div className="min-h-screen bg-felt p-4 md:p-8 relative">
+      {/* Theme Toggle - Top Right */}
+      <div className="absolute top-4 right-4 z-10">
+        <ThemeToggle />
+      </div>
+
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -126,7 +132,7 @@ export function GamePlay({
               Room: {game.room_code}
             </p>
           </div>
-          <div className="flex items-center gap-2 px-4 py-2 bg-primary/20 rounded-full">
+          <div className="flex items-center gap-2 px-4 py-2 bg-primary/20 rounded-full mr-16">
             <Coins className="w-4 h-4 text-primary" />
             <span className="font-bold text-primary">{game.pot}</span>
             <span className="text-xs text-muted-foreground">chips</span>

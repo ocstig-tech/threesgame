@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Users, Play, Dice1, Share2, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PlayerCard } from "./PlayerCard";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -107,7 +108,12 @@ export function GameLobby({
   };
 
   return (
-    <div className="min-h-screen bg-felt p-4 md:p-8">
+    <div className="min-h-screen bg-felt p-4 md:p-8 relative">
+      {/* Theme Toggle - Top Right */}
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -124,7 +130,7 @@ export function GameLobby({
               {players.length} Players
             </span>
             <span className="px-3 py-1 bg-primary/20 text-primary rounded-full font-semibold">
-              ${game.bet_amount} bet
+              {game.bet_amount} chips
             </span>
           </div>
         </div>

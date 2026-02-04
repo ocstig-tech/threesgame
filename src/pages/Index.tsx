@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useGame } from "@/hooks/useGame";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { toast } from "sonner";
 
 export default function Index() {
@@ -60,6 +61,11 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-felt flex items-center justify-center p-4">
+      {/* Theme Toggle - Top Right */}
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -71,9 +77,9 @@ export default function Index() {
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: "spring", duration: 0.8 }}
-            className="w-24 h-24 mx-auto mb-4 bg-gradient-to-br from-amber-400 to-amber-600 rounded-2xl flex items-center justify-center dice-shadow"
+            className="w-24 h-24 mx-auto mb-4 bg-gradient-to-br from-primary/80 to-primary rounded-2xl flex items-center justify-center dice-shadow"
           >
-            <Dice1 className="w-12 h-12 text-amber-900" />
+            <Dice1 className="w-12 h-12 text-primary-foreground" />
           </motion.div>
           <h1 className="text-4xl md:text-5xl font-display font-bold text-primary mb-2">
             Threes
@@ -165,7 +171,7 @@ export default function Index() {
                       variant="outline"
                       size="sm"
                       onClick={() => setBetAmount((prev) => prev + amount)}
-                      className="flex-1 min-w-[60px] bg-gradient-to-br from-amber-500/20 to-amber-600/20 border-amber-500/50 hover:from-amber-500/30 hover:to-amber-600/30 hover:border-amber-400 text-amber-200 font-bold transition-all active:scale-95"
+                      className="flex-1 min-w-[60px] bg-gradient-to-br from-primary/20 to-primary/30 border-primary/50 hover:from-primary/30 hover:to-primary/40 hover:border-primary text-foreground font-bold transition-all active:scale-95"
                     >
                       +{amount}
                     </Button>

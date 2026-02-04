@@ -58,6 +58,59 @@
     --sidebar-ring: 43 74% 49%;
   }
 
+  /* Dive Vegas Theme - Neon bar meets casino glamour */
+  .theme-dive-vegas {
+    /* Dark smoky bar with neon accents */
+    --background: 0 0% 6%;
+    --foreground: 0 0% 95%;
+
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 95%;
+
+    /* Hot pink neon as primary */
+    --primary: 330 85% 60%;
+    --primary-foreground: 0 0% 5%;
+
+    --secondary: 220 60% 20%;
+    --secondary-foreground: 0 0% 95%;
+
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 55%;
+
+    /* Electric blue accent */
+    --accent: 195 100% 50%;
+    --accent-foreground: 0 0% 5%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 95%;
+
+    --border: 330 40% 25%;
+    --input: 0 0% 12%;
+    --ring: 330 85% 60%;
+
+    /* Custom game colors - neon style */
+    --dice: 45 100% 60%;
+    --dice-shadow: 330 60% 30%;
+    --dice-dot: 0 0% 8%;
+    --winner: 120 100% 45%;
+    --loser: 0 72% 51%;
+    --felt: 0 0% 6%;
+    --felt-light: 0 0% 10%;
+    --gold-glow: 330 85% 60%;
+
+    --sidebar-background: 0 0% 6%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 330 85% 60%;
+    --sidebar-primary-foreground: 0 0% 5%;
+    --sidebar-accent: 220 60% 20%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 330 40% 25%;
+    --sidebar-ring: 330 85% 60%;
+  }
+
   .dark {
     --background: 152 45% 8%;
     --foreground: 45 30% 96%;
@@ -153,6 +206,52 @@
   50% { transform: rotate(180deg) scale(1); }
   75% { transform: rotate(270deg) scale(1.1); }
   100% { transform: rotate(360deg) scale(1); }
+}
+
+/* Dive Vegas specific overrides */
+.theme-dive-vegas .bg-felt {
+  background: linear-gradient(
+    135deg,
+    hsl(0 0% 6%) 0%,
+    hsl(260 20% 10%) 30%,
+    hsl(330 30% 8%) 70%,
+    hsl(0 0% 8%) 100%
+  );
+}
+
+.theme-dive-vegas .gold-glow {
+  box-shadow: 0 0 20px hsl(330 85% 60% / 0.4),
+              0 0 40px hsl(330 85% 60% / 0.2),
+              0 0 60px hsl(195 100% 50% / 0.1);
+}
+
+.theme-dive-vegas .card-glow {
+  box-shadow: 0 4px 20px hsl(0 0% 0% / 0.6),
+              inset 0 1px 0 hsl(330 60% 40% / 0.2),
+              0 0 30px hsl(330 85% 60% / 0.1);
+}
+
+.theme-dive-vegas .winner-glow {
+  box-shadow: 0 0 20px hsl(120 100% 45% / 0.5),
+              0 0 40px hsl(120 100% 45% / 0.3);
+}
+
+/* Neon flicker animation for dive-vegas */
+@keyframes neon-flicker {
+  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+    text-shadow: 
+      0 0 5px hsl(330 85% 60%),
+      0 0 10px hsl(330 85% 60%),
+      0 0 20px hsl(330 85% 60%),
+      0 0 40px hsl(330 85% 60%);
+  }
+  20%, 24%, 55% {
+    text-shadow: none;
+  }
+}
+
+.theme-dive-vegas .neon-text {
+  animation: neon-flicker 3s infinite;
 }
 
 @keyframes dice-bounce {

@@ -199,9 +199,37 @@ export function useGame(roomCode: string | null) {
   const startGame = async () => {
     if (!state.game) return;
 
-    // Sort players by roll-off value (highest first)
-    const sortedPlayers = [...state.players]
-      .filter((p) => p.roll_off_value !== null)
+    // Get players who have rolled
+    const playersWithRolls = state.players.filter((p) => p.roll_off_value !== null);
+    if (playersWithRolls.length === 0) return;
+
+    // Find the highest roll value
+    const highestRoll = Math.max(...playersWithRolls.map((p) => p.roll_off_value!));
+    
+    // Find all players with the highest roll (potential ties)
+    const topRollers = playersWithRolls.filter((p) => p.roll_off_value === highestRoll);
+
+    // If there's a tie at the top, only those players re-roll
+    if (topRollers.length > 1) {
+      // Reset only the tied players' roll values
+      for (const player of topRollers) {
+        await supabase
+          .from("players")
+          .update({ roll_off_value: null })
+          .eq("id", player.id);
+      }
+
+      // Set status to tie_breaker
+      await supabase
+        .from("games")
+        .update({ status: "tie_breaker" })
+        .eq("id", state.game.id);
+
+      return;
+    }
+
+    // No tie - sort players by roll-off value (highest first)
+    const sortedPlayers = [...playersWithRolls]
       .sort((a, b) => (b.roll_off_value || 0) - (a.roll_off_value || 0));
 
     // Assign turn order
@@ -225,7 +253,7 @@ export function useGame(roomCode: string | null) {
       .update({ status: "rolling" })
       .eq("id", firstPlayer.id);
 
-    // Add bet to pot
+    // Add chips to pot
     const potAmount = state.players.length * state.game.bet_amount;
 
     await supabase

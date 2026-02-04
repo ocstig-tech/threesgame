@@ -134,7 +134,7 @@ export default function Index() {
               </div>
 
               <div>
-                <Label htmlFor="bet">Bet Amount</Label>
+                <Label htmlFor="bet">Chips Per Round</Label>
                 <div className="flex items-center gap-2 mt-1.5">
                   <Input
                     id="bet"
@@ -156,7 +156,7 @@ export default function Index() {
                   </Button>
                 </div>
                 
-                {/* Quick add credit chips */}
+                {/* Quick add chips */}
                 <div className="flex flex-wrap gap-2 mt-3">
                   {[2, 5, 10, 20].map((amount) => (
                     <Button
@@ -167,12 +167,12 @@ export default function Index() {
                       onClick={() => setBetAmount((prev) => prev + amount)}
                       className="flex-1 min-w-[60px] bg-gradient-to-br from-amber-500/20 to-amber-600/20 border-amber-500/50 hover:from-amber-500/30 hover:to-amber-600/30 hover:border-amber-400 text-amber-200 font-bold transition-all active:scale-95"
                     >
-                      +${amount}
+                      +{amount}
                     </Button>
                   ))}
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Tap chips to add • Each player pays the winner
+                  Tap to add chips • Winner takes the pot each round
                 </p>
               </div>
 

@@ -34,10 +34,10 @@ export function calculateScore(dice: number[]): number {
   return dice.reduce((sum, die) => sum + (die === 3 ? 0 : die), 0);
 }
 
-// Format currency
-export function formatCurrency(amount: number): string {
-  const sign = amount >= 0 ? "+" : "";
-  return `${sign}$${Math.abs(amount)}`;
+// Format chips (no currency symbol)
+export function formatChips(amount: number): string {
+  const sign = amount >= 0 ? "+" : "-";
+  return `${sign}${Math.abs(amount)}`;
 }
 
 // Get ordinal suffix for number (1st, 2nd, 3rd, etc.)

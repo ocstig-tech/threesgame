@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Dice1, Check, RotateCcw, Trophy, DollarSign } from "lucide-react";
+import { Dice1, Check, RotateCcw, Trophy, Coins } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DiceContainer } from "./Dice";
 import { PlayerCard } from "./PlayerCard";
@@ -90,16 +90,20 @@ export function GamePlay({
 
   const handleEndTurn = async () => {
     if (!isMyTurn) return;
+    await onEndTurn(dice);
+  };
 
-    // Must keep at least one die per roll - enforce all dice kept at end
-    const finalDice = dice;
-    await onEndTurn(finalDice);
+  const handleKeepAllAndEnd = async () => {
+    if (!isMyTurn || !hasRolledOnce) return;
+    setKeptIndices([0, 1, 2, 3, 4]);
+    await onEndTurn(dice);
   };
 
   const mustKeepDie = hasRolledOnce && keptIndices.length === 0 && rollsRemaining < 5;
   const canRoll = isMyTurn && rollsRemaining > 0 && !isRolling && (!mustKeepDie || keptIndices.length > 0);
   const canEndTurn = isMyTurn && hasRolledOnce && rollsRemaining === 0;
   const canEndEarly = isMyTurn && hasRolledOnce && keptIndices.length === 5;
+  const canKeepAllAndEnd = isMyTurn && hasRolledOnce && keptIndices.length < 5;
 
   // Sort players by turn order
   const sortedPlayers = [...players].sort(
@@ -123,9 +127,9 @@ export function GamePlay({
             </p>
           </div>
           <div className="flex items-center gap-2 px-4 py-2 bg-primary/20 rounded-full">
-            <DollarSign className="w-4 h-4 text-primary" />
-            <span className="font-bold text-primary">${game.pot}</span>
-            <span className="text-xs text-muted-foreground">pot</span>
+            <Coins className="w-4 h-4 text-primary" />
+            <span className="font-bold text-primary">{game.pot}</span>
+            <span className="text-xs text-muted-foreground">chips</span>
           </div>
         </div>
 
@@ -244,6 +248,17 @@ export function GamePlay({
                   >
                     <Dice1 className="w-5 h-5 mr-2" />
                     {hasRolledOnce ? "Roll Again" : "Roll Dice"}
+                  </Button>
+                )}
+
+                {canKeepAllAndEnd && (
+                  <Button
+                    onClick={handleKeepAllAndEnd}
+                    variant="outline"
+                    size="lg"
+                  >
+                    <Check className="w-5 h-5 mr-2" />
+                    Keep All & End ({potentialScore} pts)
                   </Button>
                 )}
 

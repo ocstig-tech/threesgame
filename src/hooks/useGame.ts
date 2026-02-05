@@ -388,11 +388,9 @@ export function useGame(roomCode: string | null) {
       const winner = winners[0];
       const losers = finishedPlayers.filter((p) => p.id !== winner.id);
 
-      // Update earnings
-      // Winner takes the whole pot, but they've also contributed their share.
-      // Net profit = pot - (pot / players). Each loser loses their share.
-      const stakePerPlayer = Math.round(state.game.pot / Math.max(state.players.length, 1));
-      const winAmount = state.game.pot - stakePerPlayer;
+      // Update earnings: winner gets +wager per opponent, each loser gets -wager
+      const wager = state.game.bet_amount;
+      const winAmount = wager * losers.length;
       await supabase
         .from("players")
         .update({ total_earnings: (winner.total_earnings || 0) + winAmount })
@@ -402,7 +400,7 @@ export function useGame(roomCode: string | null) {
         await supabase
           .from("players")
           .update({
-            total_earnings: (loser.total_earnings || 0) - stakePerPlayer,
+            total_earnings: (loser.total_earnings || 0) - wager,
           })
           .eq("id", loser.id);
       }

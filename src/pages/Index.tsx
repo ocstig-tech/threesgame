@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Dice1, Users, Plus, ArrowRight } from "lucide-react";
+import { Users, Plus, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useGame } from "@/hooks/useGame";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { toast } from "sonner";
+import threesLogo from "@/assets/threes-logo.jpg";
 
 export default function Index() {
   const navigate = useNavigate();
@@ -77,9 +78,9 @@ export default function Index() {
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: "spring", duration: 0.8 }}
-            className="w-24 h-24 mx-auto mb-4 bg-gradient-to-br from-primary/80 to-primary rounded-2xl flex items-center justify-center dice-shadow"
+            className="w-32 h-32 mx-auto mb-4 rounded-2xl overflow-hidden dice-shadow"
           >
-            <Dice1 className="w-12 h-12 text-primary-foreground" />
+            <img src={threesLogo} alt="Threes" className="w-full h-full object-cover" />
           </motion.div>
           <h1 className="text-4xl md:text-5xl font-display font-bold text-primary mb-2">
             Threes

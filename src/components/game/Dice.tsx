@@ -1,9 +1,11 @@
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { Lock } from "lucide-react";
 
 interface DiceProps {
   value: number;
   isKept?: boolean;
+  isLocked?: boolean;
   isRolling?: boolean;
   onClick?: () => void;
   size?: "sm" | "md" | "lg";
@@ -34,6 +36,7 @@ const dotSizes = {
 export function Dice({
   value,
   isKept = false,
+  isLocked = false,
   isRolling = false,
   onClick,
   size = "md",
@@ -45,16 +48,17 @@ export function Dice({
   return (
     <motion.button
       onClick={onClick}
-      disabled={disabled || isRolling}
+      disabled={disabled || isRolling || isLocked}
       className={cn(
         sizeClasses[size],
         "relative rounded-lg cursor-pointer transition-all duration-200",
         "bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600",
         "dice-shadow",
-        isKept && "ring-2 ring-emerald-400 ring-offset-2 ring-offset-background",
+        isKept && !isLocked && "ring-2 ring-emerald-400 ring-offset-2 ring-offset-background",
+        isLocked && "ring-2 ring-muted-foreground/50 ring-offset-2 ring-offset-background opacity-70",
         isThree && "from-emerald-400 via-emerald-500 to-emerald-600",
-        disabled && "opacity-50 cursor-not-allowed",
-        !disabled && !isRolling && "hover:scale-105 active:scale-95"
+        (disabled || isLocked) && "cursor-not-allowed",
+        !disabled && !isRolling && !isLocked && "hover:scale-105 active:scale-95"
       )}
       animate={
         isRolling
@@ -69,8 +73,8 @@ export function Dice({
           ? { duration: 0.5, repeat: Infinity, ease: "linear" }
           : { duration: 0.2 }
       }
-      whileHover={!disabled && !isRolling ? { scale: 1.05 } : undefined}
-      whileTap={!disabled && !isRolling ? { scale: 0.95 } : undefined}
+      whileHover={!disabled && !isRolling && !isLocked ? { scale: 1.05 } : undefined}
+      whileTap={!disabled && !isRolling && !isLocked ? { scale: 0.95 } : undefined}
     >
       {/* Dice dots */}
       <div className="absolute inset-0 flex items-center justify-center">
@@ -91,8 +95,15 @@ export function Dice({
         ))}
       </div>
 
-      {/* Kept indicator */}
-      {isKept && (
+      {/* Locked indicator */}
+      {isLocked && (
+        <div className="absolute -top-1 -right-1 w-4 h-4 bg-muted-foreground rounded-full flex items-center justify-center">
+          <Lock className="w-2.5 h-2.5 text-background" />
+        </div>
+      )}
+
+      {/* Kept indicator (not locked) */}
+      {isKept && !isLocked && (
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
@@ -108,6 +119,7 @@ export function Dice({
 interface DiceContainerProps {
   dice: number[];
   keptIndices: number[];
+  lockedIndices?: number[];
   onToggleKeep: (index: number) => void;
   isRolling?: boolean;
   disabled?: boolean;
@@ -116,6 +128,7 @@ interface DiceContainerProps {
 export function DiceContainer({
   dice,
   keptIndices,
+  lockedIndices = [],
   onToggleKeep,
   isRolling = false,
   disabled = false,
@@ -127,6 +140,7 @@ export function DiceContainer({
           key={index}
           value={value}
           isKept={keptIndices.includes(index)}
+          isLocked={lockedIndices.includes(index)}
           isRolling={isRolling && !keptIndices.includes(index)}
           onClick={() => onToggleKeep(index)}
           size="lg"

@@ -6,56 +6,56 @@
 
 @layer base {
   :root {
-    /* Casino felt green theme */
-    --background: 152 45% 8%;
-    --foreground: 45 30% 96%;
+    /* Dive bar lounge - warm dark tones */
+    --background: 20 15% 7%;
+    --foreground: 35 25% 90%;
 
-    --card: 152 40% 12%;
-    --card-foreground: 45 30% 96%;
+    --card: 25 12% 12%;
+    --card-foreground: 35 25% 90%;
 
-    --popover: 152 40% 10%;
-    --popover-foreground: 45 30% 96%;
+    --popover: 20 15% 9%;
+    --popover-foreground: 35 25% 90%;
 
-    /* Gold accent for primary actions */
-    --primary: 43 74% 49%;
-    --primary-foreground: 152 45% 8%;
+    /* Warm amber/gold for primary */
+    --primary: 35 85% 55%;
+    --primary-foreground: 20 20% 8%;
 
-    --secondary: 152 30% 18%;
-    --secondary-foreground: 45 30% 96%;
+    --secondary: 20 12% 16%;
+    --secondary-foreground: 35 25% 90%;
 
-    --muted: 152 25% 20%;
-    --muted-foreground: 152 15% 55%;
+    --muted: 20 10% 18%;
+    --muted-foreground: 25 10% 50%;
 
-    --accent: 43 74% 49%;
-    --accent-foreground: 152 45% 8%;
+    --accent: 15 75% 50%;
+    --accent-foreground: 20 20% 8%;
 
     --destructive: 0 72% 51%;
-    --destructive-foreground: 45 30% 96%;
+    --destructive-foreground: 35 25% 90%;
 
-    --border: 152 30% 22%;
-    --input: 152 30% 18%;
-    --ring: 43 74% 49%;
+    --border: 25 15% 20%;
+    --input: 20 12% 16%;
+    --ring: 35 85% 55%;
 
     --radius: 0.75rem;
 
     /* Custom game colors */
-    --dice: 43 74% 49%;
-    --dice-shadow: 43 60% 25%;
-    --dice-dot: 152 45% 8%;
+    --dice: 35 85% 55%;
+    --dice-shadow: 25 60% 25%;
+    --dice-dot: 20 20% 8%;
     --winner: 142 71% 45%;
     --loser: 0 72% 51%;
-    --felt: 152 45% 8%;
-    --felt-light: 152 40% 12%;
-    --gold-glow: 43 74% 49%;
+    --felt: 20 15% 7%;
+    --felt-light: 25 12% 12%;
+    --gold-glow: 35 85% 55%;
 
-    --sidebar-background: 152 45% 8%;
-    --sidebar-foreground: 45 30% 96%;
-    --sidebar-primary: 43 74% 49%;
-    --sidebar-primary-foreground: 152 45% 8%;
-    --sidebar-accent: 152 30% 18%;
-    --sidebar-accent-foreground: 45 30% 96%;
-    --sidebar-border: 152 30% 22%;
-    --sidebar-ring: 43 74% 49%;
+    --sidebar-background: 20 15% 7%;
+    --sidebar-foreground: 35 25% 90%;
+    --sidebar-primary: 35 85% 55%;
+    --sidebar-primary-foreground: 20 20% 8%;
+    --sidebar-accent: 20 12% 16%;
+    --sidebar-accent-foreground: 35 25% 90%;
+    --sidebar-border: 25 15% 20%;
+    --sidebar-ring: 35 85% 55%;
   }
 
   /* Dive Vegas Theme - Neon bar meets casino glamour */
@@ -112,42 +112,42 @@
   }
 
   .dark {
-    --background: 152 45% 8%;
-    --foreground: 45 30% 96%;
+    --background: 20 15% 7%;
+    --foreground: 35 25% 90%;
 
-    --card: 152 40% 12%;
-    --card-foreground: 45 30% 96%;
+    --card: 25 12% 12%;
+    --card-foreground: 35 25% 90%;
 
-    --popover: 152 40% 10%;
-    --popover-foreground: 45 30% 96%;
+    --popover: 20 15% 9%;
+    --popover-foreground: 35 25% 90%;
 
-    --primary: 43 74% 49%;
-    --primary-foreground: 152 45% 8%;
+    --primary: 35 85% 55%;
+    --primary-foreground: 20 20% 8%;
 
-    --secondary: 152 30% 18%;
-    --secondary-foreground: 45 30% 96%;
+    --secondary: 20 12% 16%;
+    --secondary-foreground: 35 25% 90%;
 
-    --muted: 152 25% 20%;
-    --muted-foreground: 152 15% 55%;
+    --muted: 20 10% 18%;
+    --muted-foreground: 25 10% 50%;
 
-    --accent: 43 74% 49%;
-    --accent-foreground: 152 45% 8%;
+    --accent: 15 75% 50%;
+    --accent-foreground: 20 20% 8%;
 
     --destructive: 0 72% 51%;
-    --destructive-foreground: 45 30% 96%;
+    --destructive-foreground: 35 25% 90%;
 
-    --border: 152 30% 22%;
-    --input: 152 30% 18%;
-    --ring: 43 74% 49%;
+    --border: 25 15% 20%;
+    --input: 20 12% 16%;
+    --ring: 35 85% 55%;
 
-    --sidebar-background: 152 45% 8%;
-    --sidebar-foreground: 45 30% 96%;
-    --sidebar-primary: 43 74% 49%;
-    --sidebar-primary-foreground: 152 45% 8%;
-    --sidebar-accent: 152 30% 18%;
-    --sidebar-accent-foreground: 45 30% 96%;
-    --sidebar-border: 152 30% 22%;
-    --sidebar-ring: 43 74% 49%;
+    --sidebar-background: 20 15% 7%;
+    --sidebar-foreground: 35 25% 90%;
+    --sidebar-primary: 35 85% 55%;
+    --sidebar-primary-foreground: 20 20% 8%;
+    --sidebar-accent: 20 12% 16%;
+    --sidebar-accent-foreground: 35 25% 90%;
+    --sidebar-border: 25 15% 20%;
+    --sidebar-ring: 35 85% 55%;
   }
 }
 
@@ -168,29 +168,33 @@
   }
 
   .bg-felt {
-    background: linear-gradient(
-      135deg,
-      hsl(152 45% 8%) 0%,
-      hsl(152 40% 12%) 50%,
-      hsl(152 45% 10%) 100%
-    );
+    background: 
+      radial-gradient(ellipse at 20% 50%, hsl(30 15% 12% / 0.6) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 30%, hsl(20 20% 10% / 0.5) 0%, transparent 50%),
+      linear-gradient(
+        180deg,
+        hsl(20 15% 7%) 0%,
+        hsl(25 12% 10%) 30%,
+        hsl(15 10% 8%) 60%,
+        hsl(20 15% 6%) 100%
+      );
   }
 
   .gold-glow {
-    box-shadow: 0 0 20px hsl(43 74% 49% / 0.3),
-                0 0 40px hsl(43 74% 49% / 0.1);
+    box-shadow: 0 0 20px hsl(35 85% 55% / 0.3),
+                0 0 40px hsl(35 85% 55% / 0.1);
   }
 
   .dice-shadow {
     box-shadow: 
-      0 4px 6px hsl(0 0% 0% / 0.3),
-      0 8px 15px hsl(0 0% 0% / 0.2),
-      inset 0 1px 0 hsl(43 74% 70% / 0.3);
+      0 4px 6px hsl(0 0% 0% / 0.4),
+      0 8px 15px hsl(0 0% 0% / 0.3),
+      inset 0 1px 0 hsl(35 85% 70% / 0.3);
   }
 
   .card-glow {
-    box-shadow: 0 4px 20px hsl(0 0% 0% / 0.4),
-                inset 0 1px 0 hsl(152 30% 30% / 0.3);
+    box-shadow: 0 4px 20px hsl(0 0% 0% / 0.5),
+                inset 0 1px 0 hsl(25 15% 25% / 0.3);
   }
 
   .winner-glow {
@@ -260,8 +264,8 @@
 }
 
 @keyframes pulse-gold {
-  0%, 100% { box-shadow: 0 0 20px hsl(43 74% 49% / 0.3); }
-  50% { box-shadow: 0 0 40px hsl(43 74% 49% / 0.6); }
+  0%, 100% { box-shadow: 0 0 20px hsl(35 85% 55% / 0.3); }
+  50% { box-shadow: 0 0 40px hsl(35 85% 55% / 0.6); }
 }
 
 @keyframes shimmer {
@@ -284,9 +288,9 @@
 .shimmer {
   background: linear-gradient(
     90deg,
-    hsl(43 74% 49% / 0) 0%,
-    hsl(43 74% 49% / 0.3) 50%,
-    hsl(43 74% 49% / 0) 100%
+    hsl(35 85% 55% / 0) 0%,
+    hsl(35 85% 55% / 0.3) 50%,
+    hsl(35 85% 55% / 0) 100%
   );
   background-size: 200% 100%;
   animation: shimmer 2s infinite;

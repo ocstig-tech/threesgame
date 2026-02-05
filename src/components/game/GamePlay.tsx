@@ -6,6 +6,7 @@ import { DiceContainer } from "./Dice";
 import { PlayerCard } from "./PlayerCard";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { rollDice, calculateScore } from "@/lib/gameUtils";
+import threesLogo from "@/assets/threes-logo.jpg";
 import type { Database } from "@/integrations/supabase/types";
 
 type Game = Database["public"]["Tables"]["games"]["Row"];
@@ -39,9 +40,11 @@ export function GamePlay({
   const [rollsRemaining, setRollsRemaining] = useState(5);
   const [isRolling, setIsRolling] = useState(false);
   const [hasRolledOnce, setHasRolledOnce] = useState(false);
+  // Track dice that were locked from previous rolls (can't un-keep)
+  const [lockedIndices, setLockedIndices] = useState<number[]>([]);
 
   const isMyTurn = currentPlayer?.id === myPlayer?.id;
-  
+
   const currentScore = calculateScore(dice.filter((_, i) => keptIndices.includes(i)));
   const potentialScore = calculateScore(dice);
 
@@ -50,6 +53,7 @@ export function GamePlay({
     if (isMyTurn && myPlayer?.status === "rolling") {
       setDice([0, 0, 0, 0, 0]);
       setKeptIndices([]);
+      setLockedIndices([]);
       setRollsRemaining(myPlayer.rolls_remaining || 5);
       setHasRolledOnce(false);
     }
@@ -58,9 +62,18 @@ export function GamePlay({
   const handleRoll = async () => {
     if (!isMyTurn || rollsRemaining <= 0 || isRolling) return;
 
+    // After first roll, must have kept at least one NEW die since last roll
+    if (hasRolledOnce) {
+      const newKeptCount = keptIndices.filter(i => !lockedIndices.includes(i)).length;
+      if (newKeptCount === 0) return; // Must keep at least 1 die
+    }
+
     setIsRolling(true);
 
-    // Let the dice component's framer-motion animation run briefly
+    // Lock currently kept dice before this roll
+    const newLockedIndices = [...keptIndices];
+    setLockedIndices(newLockedIndices);
+
     await new Promise((r) => setTimeout(r, 550));
 
     const newDice =
@@ -75,10 +88,11 @@ export function GamePlay({
 
   const handleToggleKeep = (index: number) => {
     if (!isMyTurn || isRolling || !hasRolledOnce) return;
+    // Can't un-keep dice that were locked from previous rolls
+    if (lockedIndices.includes(index)) return;
 
     setKeptIndices((prev) => {
       if (prev.includes(index)) {
-        // Can only un-keep if we have rolls remaining
         if (rollsRemaining > 0) {
           return prev.filter((i) => i !== index);
         }
@@ -100,13 +114,14 @@ export function GamePlay({
     await onEndTurn(dice);
   };
 
-  const mustKeepDie = hasRolledOnce && keptIndices.length === 0 && rollsRemaining < 5;
-  const canRoll = isMyTurn && rollsRemaining > 0 && !isRolling && (!mustKeepDie || keptIndices.length > 0);
-  const canEndTurn = isMyTurn && hasRolledOnce && rollsRemaining === 0;
-  const canEndEarly = isMyTurn && hasRolledOnce && keptIndices.length === 5;
-  const canKeepAllAndEnd = isMyTurn && hasRolledOnce && keptIndices.length < 5;
+  // Must keep at least one NEW die (not previously locked) before rolling again
+  const newKeptCount = keptIndices.filter(i => !lockedIndices.includes(i)).length;
+  const mustKeepDie = hasRolledOnce && newKeptCount === 0 && rollsRemaining > 0;
+  const allDiceKept = keptIndices.length === 5;
+  const canRoll = isMyTurn && rollsRemaining > 0 && !isRolling && !mustKeepDie && !allDiceKept;
+  const canEndTurn = isMyTurn && hasRolledOnce && (rollsRemaining === 0 || allDiceKept);
+  const canKeepAllAndEnd = isMyTurn && hasRolledOnce && !allDiceKept;
 
-  // Sort players by turn order
   const sortedPlayers = [...players].sort(
     (a, b) => (a.turn_order || 999) - (b.turn_order || 999)
   );
@@ -116,7 +131,6 @@ export function GamePlay({
 
   return (
     <div className="min-h-screen bg-felt p-4 md:p-8 relative">
-      {/* Theme Toggle - Top Right */}
       <div className="absolute top-4 right-4 z-10">
         <ThemeToggle />
       </div>
@@ -124,13 +138,16 @@ export function GamePlay({
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-display font-bold text-primary">
-              Threes
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Room: {game.room_code}
-            </p>
+          <div className="flex items-center gap-3">
+            <img src={threesLogo} alt="Threes" className="w-12 h-12 rounded-lg object-cover" />
+            <div>
+              <h1 className="text-2xl font-display font-bold text-primary">
+                Threes
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Room: {game.room_code}
+              </p>
+            </div>
           </div>
           <div className="flex items-center gap-2 px-4 py-2 bg-primary/20 rounded-full mr-16">
             <Coins className="w-4 h-4 text-primary" />
@@ -139,148 +156,161 @@ export function GamePlay({
           </div>
         </div>
 
-        {/* Current Turn Indicator */}
+        {/* Current Turn Area */}
         <div
           className={`bg-card/80 backdrop-blur-sm rounded-2xl p-6 mb-6 card-glow ${
             isMyTurn ? "ring-2 ring-primary" : ""
           }`}
         >
-            {/* Between-rounds prompt */}
-            {isBetweenRounds && (
-              <div className="mb-5 rounded-xl border border-border bg-secondary/30 p-4 text-center">
-                <p className="text-foreground font-medium">Round complete</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {isHost
-                    ? "Start the next round when everyone is ready."
-                    : "Waiting for the host to start the next round."}
-                </p>
-                {isHost && (
-                  <div className="mt-4 flex justify-center">
-                    <Button onClick={onStartNextRound} className="gold-glow" size="lg">
-                      <RotateCcw className="w-5 h-5 mr-2" />
-                      Start Next Round
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className="text-center mb-4">
-              <p className={`text-sm mb-1 ${isMyTurn ? "text-primary font-bold text-lg" : "text-muted-foreground"}`}>
-                {isMyTurn ? "🎲 Your Turn!" : `${currentPlayer?.name}'s Turn`}
+          {/* Between-rounds prompt */}
+          {isBetweenRounds && (
+            <div className="mb-5 rounded-xl border border-border bg-secondary/30 p-4 text-center">
+              <p className="text-foreground font-medium">Round complete</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {isHost
+                  ? "Start the next round when everyone is ready."
+                  : "Waiting for the host to start the next round."}
               </p>
-              {isMyTurn && (
-                <p className="text-xs text-muted-foreground">
-                  {rollsRemaining} rolls remaining • Tap dice to keep
-                </p>
+              {isHost && (
+                <div className="mt-4 flex justify-center">
+                  <Button onClick={onStartNextRound} className="gold-glow" size="lg">
+                    <RotateCcw className="w-5 h-5 mr-2" />
+                    Start Next Round
+                  </Button>
+                </div>
               )}
             </div>
+          )}
 
-            {/* Dice Area */}
-            {isMyTurn && !isBetweenRounds ? (
-              <>
-                <DiceContainer
-                  dice={dice}
-                  keptIndices={keptIndices}
-                  onToggleKeep={handleToggleKeep}
-                  isRolling={isRolling}
-                  disabled={!hasRolledOnce}
-                />
+          <div className="text-center mb-4">
+            <p className={`text-sm mb-1 ${isMyTurn ? "text-primary font-bold text-lg" : "text-muted-foreground"}`}>
+              {isMyTurn ? "🎲 Your Turn!" : `${currentPlayer?.name}'s Turn`}
+            </p>
+            {isMyTurn && (
+              <p className="text-xs text-muted-foreground">
+                {rollsRemaining} rolls remaining • Tap dice to keep • Must keep ≥1 per roll
+              </p>
+            )}
+          </div>
 
-                {hasRolledOnce && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="mt-4 text-center"
-                  >
-                    <p className="text-sm text-muted-foreground">
-                      Kept Score:{" "}
-                      <span className="font-bold text-primary">
-                        {currentScore}
-                      </span>
-                      {keptIndices.length < 5 && (
-                        <>
-                          {" "}
-                          • Potential:{" "}
-                          <span className="font-medium">{potentialScore}</span>
-                        </>
-                      )}
-                    </p>
-                  </motion.div>
-                )}
+          {/* Dice Area */}
+          {isMyTurn && !isBetweenRounds ? (
+            <>
+              <DiceContainer
+                dice={dice}
+                keptIndices={keptIndices}
+                lockedIndices={lockedIndices}
+                onToggleKeep={handleToggleKeep}
+                isRolling={isRolling}
+                disabled={!hasRolledOnce}
+              />
 
-                {mustKeepDie && (
-                  <p className="text-center text-sm text-destructive mt-2">
-                    You must keep at least one die before rolling again!
+              {hasRolledOnce && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="mt-4 text-center"
+                >
+                  <p className="text-sm text-muted-foreground">
+                    Kept Score:{" "}
+                    <span className="font-bold text-primary">
+                      {currentScore}
+                    </span>
+                    {keptIndices.length < 5 && (
+                      <>
+                        {" "}
+                        • Potential:{" "}
+                        <span className="font-medium">{potentialScore}</span>
+                      </>
+                    )}
                   </p>
-                )}
-              </>
-            ) : (
-              <div className="flex flex-col items-center gap-4">
-            {/* Show kept dice from the current player */}
-                <div className="flex justify-center gap-2">
-                  {(currentPlayer?.kept_dice || []).map((die, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ delay: i * 0.1 }}
-                    >
-                      <div className="w-12 h-12 bg-secondary rounded-lg flex items-center justify-center">
-                        {die > 0 ? (
-                          <span className="text-xl font-bold">{die}</span>
-                        ) : (
-                          <span className="text-muted-foreground">?</span>
-                        )}
-                      </div>
-                    </motion.div>
-                  ))}
-                  {(currentPlayer?.kept_dice || []).length === 0 && (
-                    <p className="text-muted-foreground">Waiting for roll...</p>
-                  )}
-                </div>
-              </div>
-            )}
+                </motion.div>
+              )}
 
-            {/* Action Buttons */}
-            {isMyTurn && !isBetweenRounds && (
-              <div className="flex gap-3 mt-6 justify-center">
-                {canRoll && (
-                  <Button
-                    onClick={handleRoll}
-                    disabled={isRolling}
-                    size="lg"
-                    className="gold-glow"
+              {mustKeepDie && (
+                <p className="text-center text-sm text-destructive mt-2">
+                  You must keep at least one die before rolling again!
+                </p>
+              )}
+            </>
+          ) : (
+            <div className="flex flex-col items-center gap-4">
+              <div className="flex justify-center gap-2">
+                {(currentPlayer?.kept_dice || []).map((die, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: i * 0.1 }}
                   >
-                    <Dice1 className="w-5 h-5 mr-2" />
-                    {hasRolledOnce ? "Roll Again" : "Roll Dice"}
-                  </Button>
-                )}
-
-                {canKeepAllAndEnd && (
-                  <Button
-                    onClick={handleKeepAllAndEnd}
-                    variant="outline"
-                    size="lg"
-                  >
-                    <Check className="w-5 h-5 mr-2" />
-                    Keep All & End ({potentialScore} pts)
-                  </Button>
-                )}
-
-                {(canEndTurn || canEndEarly) && (
-                  <Button
-                    onClick={handleEndTurn}
-                    variant="secondary"
-                    size="lg"
-                  >
-                    <Check className="w-5 h-5 mr-2" />
-                    End Turn ({potentialScore} pts)
-                  </Button>
+                    <div className="w-12 h-12 bg-secondary rounded-lg flex items-center justify-center">
+                      {die > 0 ? (
+                        <span className="text-xl font-bold">{die}</span>
+                      ) : (
+                        <span className="text-muted-foreground">?</span>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
+                {(currentPlayer?.kept_dice || []).length === 0 && (
+                  <p className="text-muted-foreground">Waiting for roll...</p>
                 )}
               </div>
-            )}
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          {isMyTurn && !isBetweenRounds && (
+            <div className="flex gap-3 mt-6 justify-center flex-wrap">
+              {!hasRolledOnce && (
+                <Button
+                  onClick={handleRoll}
+                  disabled={isRolling}
+                  size="lg"
+                  className="gold-glow"
+                >
+                  <Dice1 className="w-5 h-5 mr-2" />
+                  Roll Dice
+                </Button>
+              )}
+
+              {hasRolledOnce && canRoll && (
+                <Button
+                  onClick={handleRoll}
+                  disabled={isRolling || mustKeepDie}
+                  size="lg"
+                  className="gold-glow"
+                >
+                  <Dice1 className="w-5 h-5 mr-2" />
+                  Roll Again
+                </Button>
+              )}
+
+              {canKeepAllAndEnd && (
+                <Button
+                  onClick={handleKeepAllAndEnd}
+                  variant="outline"
+                  size="lg"
+                >
+                  <Check className="w-5 h-5 mr-2" />
+                  Keep All & End ({potentialScore} pts)
+                </Button>
+              )}
+
+              {canEndTurn && (
+                <Button
+                  onClick={handleEndTurn}
+                  variant="secondary"
+                  size="lg"
+                >
+                  <Check className="w-5 h-5 mr-2" />
+                  End Turn ({potentialScore} pts)
+                </Button>
+              )}
+            </div>
+          )}
         </div>
+
         {/* Players Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {sortedPlayers.map((player) => (

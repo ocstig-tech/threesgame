@@ -1,10 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Users, Play, Dice1, Share2, Copy, Check } from "lucide-react";
+import { Users, Play, Dice1 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PlayerCard } from "./PlayerCard";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 
 type Game = Database["public"]["Tables"]["games"]["Row"];
@@ -29,7 +28,7 @@ export function GameLobby({
   onRollForTurn,
   onStartGame,
 }: GameLobbyProps) {
-  const [copied, setCopied] = useState(false);
+  
   const [countdown, setCountdown] = useState<number | null>(null);
   const countdownStartedRef = useRef(false);
   
@@ -75,37 +74,6 @@ export function GameLobby({
 
   const canStartGame = allRolled && countdown === 0;
   
-  const gameUrl = `${window.location.origin}/game/${game.room_code}`;
-  
-  const handleCopyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(gameUrl);
-      setCopied(true);
-      toast.success("Link copied to clipboard!");
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      toast.error("Failed to copy link");
-    }
-  };
-  
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: "Join my Threes game!",
-          text: `Join my Threes dice game! Room code: ${game.room_code}`,
-          url: gameUrl,
-        });
-      } catch (err) {
-        // User cancelled or share failed - fallback to copy
-        if ((err as Error).name !== "AbortError") {
-          handleCopyLink();
-        }
-      }
-    } else {
-      handleCopyLink();
-    }
-  };
 
   return (
     <div className="min-h-screen bg-felt p-4 md:p-8 relative">
@@ -146,35 +114,6 @@ export function GameLobby({
             {game.room_code}
           </p>
           
-          {/* Share buttons */}
-          <div className="flex flex-col gap-3">
-            <div className="bg-secondary/50 rounded-lg p-3">
-              <p className="text-xs text-muted-foreground mb-1">Share this link:</p>
-              <p className="text-sm font-mono text-foreground break-all">{gameUrl}</p>
-            </div>
-            
-            <div className="flex gap-2">
-              <Button
-                onClick={handleCopyLink}
-                variant="outline"
-                className="flex-1"
-              >
-                {copied ? (
-                  <Check className="w-4 h-4 mr-2 text-emerald-500" />
-                ) : (
-                  <Copy className="w-4 h-4 mr-2" />
-                )}
-                {copied ? "Copied!" : "Copy Link"}
-              </Button>
-              <Button
-                onClick={handleShare}
-                className="flex-1 gold-glow"
-              >
-                <Share2 className="w-4 h-4 mr-2" />
-                Share
-              </Button>
-            </div>
-          </div>
         </motion.div>
 
         {/* Instructions */}

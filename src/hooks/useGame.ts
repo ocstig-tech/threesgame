@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { getSessionId, rollDice, calculateScore } from "@/lib/gameUtils";
+import { rollDice, calculateScore } from "@/lib/gameUtils";
 import type { Database } from "@/integrations/supabase/types";
 
 type Game = Database["public"]["Tables"]["games"]["Row"];
@@ -28,7 +28,25 @@ export function useGame(roomCode: string | null) {
     error: null,
   });
 
-  const sessionId = getSessionId();
+  // Use account ID as session identifier
+  const getAccountId = (): string => {
+    try {
+      const stored = localStorage.getItem("threes_account");
+      if (stored) {
+        const acc = JSON.parse(stored);
+        return acc.id;
+      }
+    } catch {}
+    // Fallback to legacy session ID
+    const key = "threes_session_id";
+    let sid = localStorage.getItem(key);
+    if (!sid) {
+      sid = crypto.randomUUID();
+      localStorage.setItem(key, sid);
+    }
+    return sid;
+  };
+  const sessionId = getAccountId();
 
   // Fetch game and players
   const fetchGame = useCallback(async () => {
@@ -133,6 +151,7 @@ export function useGame(roomCode: string | null) {
       game_id: game.id,
       name: hostName,
       session_id: sessionId,
+      account_id: sessionId,
     });
 
     if (playerError) throw playerError;
@@ -166,6 +185,7 @@ export function useGame(roomCode: string | null) {
       game_id: game.id,
       name: playerName,
       session_id: sessionId,
+      account_id: sessionId,
     });
 
     if (playerError) throw playerError;

@@ -95,8 +95,30 @@ export type Database = {
         }
         Relationships: []
       }
+      player_accounts: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          pin_hash: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          pin_hash: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          pin_hash?: string
+        }
+        Relationships: []
+      }
       players: {
         Row: {
+          account_id: string | null
           created_at: string
           current_score: number | null
           game_id: string
@@ -112,6 +134,7 @@ export type Database = {
           turn_order: number | null
         }
         Insert: {
+          account_id?: string | null
           created_at?: string
           current_score?: number | null
           game_id: string
@@ -127,6 +150,7 @@ export type Database = {
           turn_order?: number | null
         }
         Update: {
+          account_id?: string | null
           created_at?: string
           current_score?: number | null
           game_id?: string
@@ -142,6 +166,13 @@ export type Database = {
           turn_order?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "players_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "player_accounts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "players_game_id_fkey"
             columns: ["game_id"]

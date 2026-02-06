@@ -1,0 +1,1 @@
+ALTER TABLE public.players DROP COLUMN phone_number;

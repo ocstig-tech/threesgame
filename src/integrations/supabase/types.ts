@@ -104,7 +104,6 @@ export type Database = {
           is_active: boolean
           kept_dice: number[] | null
           name: string
-          phone_number: string | null
           roll_off_value: number | null
           rolls_remaining: number | null
           session_id: string
@@ -120,7 +119,6 @@ export type Database = {
           is_active?: boolean
           kept_dice?: number[] | null
           name: string
-          phone_number?: string | null
           roll_off_value?: number | null
           rolls_remaining?: number | null
           session_id: string
@@ -136,7 +134,6 @@ export type Database = {
           is_active?: boolean
           kept_dice?: number[] | null
           name?: string
-          phone_number?: string | null
           roll_off_value?: number | null
           rolls_remaining?: number | null
           session_id?: string

@@ -253,9 +253,9 @@ export default function Index() {
             </div>
           </motion.div>}
 
-        <p className="text-center text-sm text-muted-foreground mt-8">
-          Lowest score wins • Threes count as zero
-        </p>
+        <p className="text-center text-sm mt-8">Lowest score wins • Threes = Zero • For Exhibition Only  
+    
+      </p>
       </motion.div>
     </div>;
 }

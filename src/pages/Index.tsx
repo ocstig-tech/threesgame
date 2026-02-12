@@ -32,6 +32,10 @@ export default function Index() {
   const [isLoading, setIsLoading] = useState(false);
   const handleCreate = async () => {
     if (!account) return;
+    if (betAmount < 1 || betAmount > 100) {
+      toast.error("Bet must be between 1 and 100 chips");
+      return;
+    }
     setIsLoading(true);
     try {
       const code = await createGame(account.name, betAmount);
@@ -137,13 +141,13 @@ export default function Index() {
               <div>
                 <Label htmlFor="bet">Chips Per Round</Label>
                 <div className="flex items-center gap-2 mt-1.5">
-                  <Input id="bet" type="number" min={0} max={1000} value={betAmount} onChange={e => setBetAmount(Number(e.target.value))} className="text-center text-xl font-bold" />
-                  <Button type="button" variant="outline" size="sm" onClick={() => setBetAmount(0)} className="text-xs px-2">
-                    Clear
+                  <Input id="bet" type="number" min={1} max={100} value={betAmount} onChange={e => setBetAmount(Math.max(1, Math.min(100, Number(e.target.value) || 1)))} className="text-center text-xl font-bold" />
+                  <Button type="button" variant="outline" size="sm" onClick={() => setBetAmount(1)} className="text-xs px-2">
+                    Min
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2 mt-3">
-                  {[2, 5, 10, 20].map(amount => <Button key={amount} type="button" variant="outline" size="sm" onClick={() => setBetAmount(prev => prev + amount)} className="flex-1 min-w-[60px] bg-gradient-to-br from-primary/20 to-primary/30 border-primary/50 hover:from-primary/30 hover:to-primary/40 hover:border-primary text-foreground font-bold transition-all active:scale-95">
+                  {[2, 5, 10, 20].map(amount => <Button key={amount} type="button" variant="outline" size="sm" onClick={() => setBetAmount(prev => Math.min(100, prev + amount))} className="flex-1 min-w-[60px] bg-gradient-to-br from-primary/20 to-primary/30 border-primary/50 hover:from-primary/30 hover:to-primary/40 hover:border-primary text-foreground font-bold transition-all active:scale-95">
                       +{amount}
                     </Button>)}
                 </div>

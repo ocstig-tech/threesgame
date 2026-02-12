@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const ALLOWED_ORIGINS = [
   "https://threesgame.lovable.app",
   "https://id-preview--167792c5-866d-4eb6-8181-13a1774ed253.lovable.app",
+  "https://167792c5-866d-4eb6-8181-13a1774ed253.lovableproject.com",
   "http://localhost:8080",
   "http://localhost:5173",
 ];

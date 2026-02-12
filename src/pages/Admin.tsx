@@ -17,6 +17,11 @@ interface AccountInfo {
   security_color: string | null;
 }
 
+interface PlayerStats {
+  total_earnings: number;
+  games_played: number;
+}
+
 const SECURITY_COLORS: Record<string, string> = {
   red: "bg-red-500",
   blue: "bg-blue-500",
@@ -33,6 +38,7 @@ export default function Admin() {
   const [pin, setPin] = useState("");
   const [loading, setLoading] = useState(false);
   const [accounts, setAccounts] = useState<AccountInfo[]>([]);
+  const [stats, setStats] = useState<Record<string, PlayerStats>>({});
   const [fetching, setFetching] = useState(false);
 
   const handleLogin = async () => {
@@ -65,7 +71,22 @@ export default function Admin() {
         body: { action: "admin_list_accounts", name: "mastercliff", pin: "0000" },
       });
       if (error) throw error;
-      setAccounts(data?.accounts || []);
+      const accs: AccountInfo[] = data?.accounts || [];
+      setAccounts(accs);
+
+      // Fetch stats for each account
+      const statsMap: Record<string, PlayerStats> = {};
+      for (const acc of accs) {
+        const { data: players } = await supabase
+          .from("players")
+          .select("total_earnings, game_id")
+          .eq("account_id", acc.id);
+        
+        const uniqueGames = new Set(players?.map((p) => p.game_id) || []);
+        const totalEarnings = players?.reduce((sum, p) => sum + (p.total_earnings || 0), 0) || 0;
+        statsMap[acc.id] = { total_earnings: totalEarnings, games_played: uniqueGames.size };
+      }
+      setStats(statsMap);
     } catch {
       toast.error("Failed to load accounts");
     } finally {
@@ -199,9 +220,13 @@ export default function Admin() {
                       ({acc.failed_reset_attempts} failed attempt{acc.failed_reset_attempts > 1 ? "s" : ""})
                     </span>
                   )}
+                  <div className="flex gap-3 mt-0.5 text-xs text-muted-foreground">
+                    <span>{stats[acc.id]?.games_played ?? 0} games</span>
+                    <span className={stats[acc.id]?.total_earnings >= 0 ? "text-green-500" : "text-destructive"}>
+                      {(stats[acc.id]?.total_earnings ?? 0) >= 0 ? "+" : ""}{stats[acc.id]?.total_earnings ?? 0} chips
+                    </span>
+                  </div>
                 </div>
-              </div>
-              <div className="flex gap-2">
                 <Button
                   variant="outline"
                   size="sm"

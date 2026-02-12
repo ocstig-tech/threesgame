@@ -7,6 +7,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface AccountInfo {
   id: string;
@@ -40,6 +50,7 @@ export default function Admin() {
   const [accounts, setAccounts] = useState<AccountInfo[]>([]);
   const [stats, setStats] = useState<Record<string, PlayerStats>>({});
   const [fetching, setFetching] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   const handleLogin = async () => {
     if (!name.trim() || pin.length !== 4) {
@@ -113,7 +124,6 @@ export default function Admin() {
   };
 
   const handleDelete = async (accountName: string) => {
-    if (!confirm(`Delete account "${accountName}" permanently?`)) return;
     try {
       const { data, error } = await supabase.functions.invoke("player-auth", {
         body: { action: "admin_delete_account", name: accountName, pin: "0000" },
@@ -121,6 +131,7 @@ export default function Admin() {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       toast.success(data.message);
+      setDeleteTarget(null);
       fetchAccounts();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Delete failed");
@@ -240,7 +251,7 @@ export default function Admin() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleDelete(acc.name)}
+                  onClick={() => setDeleteTarget(acc.name)}
                   className="text-destructive border-destructive/30 hover:bg-destructive/10"
                 >
                   <Trash2 className="w-3 h-3 mr-1" /> Delete
@@ -256,6 +267,26 @@ export default function Admin() {
           )}
         </div>
       </div>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Account</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete <span className="font-semibold text-foreground">"{deleteTarget}"</span> and remove them from all games. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteTarget && handleDelete(deleteTarget)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Permanently
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

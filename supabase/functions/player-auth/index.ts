@@ -322,6 +322,42 @@ Deno.serve(async (req) => {
       );
     }
 
+    // ─── ADMIN DELETE ACCOUNT ───
+    if (action === "admin_delete_account") {
+      const { data: account, error: findErr } = await supabase
+        .from("player_accounts")
+        .select("id, name")
+        .ilike("name", trimmedName)
+        .single();
+
+      if (findErr || !account) {
+        return new Response(
+          JSON.stringify({ error: "Account not found." }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Remove from any active games first
+      await supabase.from("players").delete().eq("account_id", account.id);
+
+      const { error: delErr } = await supabase
+        .from("player_accounts")
+        .delete()
+        .eq("id", account.id);
+
+      if (delErr) {
+        return new Response(
+          JSON.stringify({ error: "Failed to delete account" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ message: `Account "${account.name}" has been deleted.` }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     return new Response(
       JSON.stringify({ error: "Invalid action" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }

@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Users, Plus, ArrowRight, LogOut } from "lucide-react";
+import { Users, Plus, ArrowRight, LogOut, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -193,5 +193,8 @@ export default function Index() {
     
       </p>
       </motion.div>
+      <Link to="/admin" className="absolute bottom-3 right-3 text-muted-foreground/20 hover:text-muted-foreground/50 transition-colors">
+        <Settings className="w-3.5 h-3.5" />
+      </Link>
     </div>;
 }

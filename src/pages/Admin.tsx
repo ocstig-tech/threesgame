@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, RefreshCw, Unlock, Shield, Users } from "lucide-react";
+import { ArrowLeft, RefreshCw, Unlock, Shield, Users, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -88,6 +88,21 @@ export default function Admin() {
       fetchAccounts();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Reset failed");
+    }
+  };
+
+  const handleDelete = async (accountName: string) => {
+    if (!confirm(`Delete account "${accountName}" permanently?`)) return;
+    try {
+      const { data, error } = await supabase.functions.invoke("player-auth", {
+        body: { action: "admin_delete_account", name: accountName, pin: "0000" },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(data.message);
+      fetchAccounts();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Delete failed");
     }
   };
 
@@ -186,14 +201,24 @@ export default function Admin() {
                   )}
                 </div>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleReset(acc.name)}
-                className="text-primary border-primary/30 hover:bg-primary/10"
-              >
-                <Unlock className="w-3 h-3 mr-1" /> Reset Code
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleReset(acc.name)}
+                  className="text-primary border-primary/30 hover:bg-primary/10"
+                >
+                  <Unlock className="w-3 h-3 mr-1" /> Reset
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDelete(acc.name)}
+                  className="text-destructive border-destructive/30 hover:bg-destructive/10"
+                >
+                  <Trash2 className="w-3 h-3 mr-1" /> Delete
+                </Button>
+              </div>
             </motion.div>
           ))}
           {accounts.length === 0 && !fetching && (

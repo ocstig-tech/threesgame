@@ -102,7 +102,7 @@ export type Database = {
           id: string
           is_locked: boolean
           name: string
-          pin_hash: string
+          pin_hash: string | null
           security_color: string | null
         }
         Insert: {
@@ -111,7 +111,7 @@ export type Database = {
           id?: string
           is_locked?: boolean
           name: string
-          pin_hash: string
+          pin_hash?: string | null
           security_color?: string | null
         }
         Update: {
@@ -120,7 +120,7 @@ export type Database = {
           id?: string
           is_locked?: boolean
           name?: string
-          pin_hash?: string
+          pin_hash?: string | null
           security_color?: string | null
         }
         Relationships: []

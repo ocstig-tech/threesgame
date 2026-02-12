@@ -332,8 +332,15 @@ Deno.serve(async (req) => {
 
     // ─── ADMIN LOGIN ───
     if (action === "admin_login") {
-      const ADMIN_NAME = (Deno.env.get("ADMIN_USERNAME") || "mastercliff").toLowerCase();
-      const ADMIN_PIN = Deno.env.get("ADMIN_PIN") || "7669";
+      const ADMIN_NAME = Deno.env.get("ADMIN_USERNAME")?.toLowerCase();
+      const ADMIN_PIN = Deno.env.get("ADMIN_PIN");
+
+      if (!ADMIN_NAME || !ADMIN_PIN) {
+        return new Response(
+          JSON.stringify({ error: "Admin not configured" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
 
       if (trimmedName !== ADMIN_NAME) {
         return new Response(

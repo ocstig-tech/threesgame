@@ -8,17 +8,9 @@ import { Label } from "@/components/ui/label";
 import { useGame } from "@/hooks/useGame";
 import { usePlayerAccount } from "@/hooks/usePlayerAccount";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { AuthForm } from "@/components/game/AuthForm";
 import { toast } from "sonner";
 import threesLogo from "@/assets/threes-logo.jpg";
-function PinInput({
-  value,
-  onChange
-}: {
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  return <Input type="text" inputMode="numeric" maxLength={4} value={value} onChange={e => onChange(e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="••••" className="text-center text-2xl font-mono tracking-[0.5em] mt-1.5" />;
-}
 export default function Index() {
   const navigate = useNavigate();
   const {
@@ -26,44 +18,18 @@ export default function Index() {
     isLoading: accountLoading,
     register,
     login,
-    logout
+    logout,
+    resetCode,
+    setNewPin,
   } = usePlayerAccount();
   const {
     createGame,
     joinGame
   } = useGame(null);
-  const [authMode, setAuthMode] = useState<"login" | "register">("login");
-  const [authName, setAuthName] = useState("");
-  const [authPin, setAuthPin] = useState("");
-  const [authLoading, setAuthLoading] = useState(false);
   const [mode, setMode] = useState<"menu" | "create" | "join">("menu");
   const [roomCode, setRoomCode] = useState("");
   const [betAmount, setBetAmount] = useState(5);
   const [isLoading, setIsLoading] = useState(false);
-  const handleAuth = async () => {
-    if (!authName.trim()) {
-      toast.error("Please enter your name");
-      return;
-    }
-    if (authPin.length !== 4) {
-      toast.error("Code must be exactly 4 digits");
-      return;
-    }
-    setAuthLoading(true);
-    try {
-      if (authMode === "register") {
-        await register(authName.trim(), authPin);
-        toast.success("Account created!");
-      } else {
-        await login(authName.trim(), authPin);
-        toast.success("Welcome back!");
-      }
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Auth failed");
-    } finally {
-      setAuthLoading(false);
-    }
-  };
   const handleCreate = async () => {
     if (!account) return;
     setIsLoading(true);
@@ -132,45 +98,15 @@ export default function Index() {
         </div>
 
         {/* Auth Screen */}
-        {!account && <motion.div initial={{
-        opacity: 0
-      }} animate={{
-        opacity: 1
-      }} className="bg-card/80 backdrop-blur-sm rounded-2xl p-6 card-glow">
-            <h2 className="text-xl font-semibold text-foreground mb-6 text-center">
-              {authMode === "login" ? "Sign In" : "Create Account"}
-            </h2>
-
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="authName">Player Name</Label>
-                <Input id="authName" value={authName} onChange={e => setAuthName(e.target.value)} placeholder="Enter your name" className="mt-1.5" maxLength={20} />
-              </div>
-
-              <div>
-              <Label htmlFor="authPin">4-Digit Code</Label>
-                <PinInput value={authPin} onChange={setAuthPin} />
-              </div>
-
-              <Button onClick={handleAuth} disabled={authLoading} className="w-full gold-glow" size="lg">
-                {authLoading ? "Loading..." : authMode === "login" ? "Sign In" : "Create Account"}
-              </Button>
-
-              <p className="text-center text-sm text-muted-foreground">
-                {authMode === "login" ? <>
-                    New player?{" "}
-                    <button onClick={() => setAuthMode("register")} className="text-primary underline">
-                      Create Account
-                    </button>
-                  </> : <>
-                    Already have an account?{" "}
-                    <button onClick={() => setAuthMode("login")} className="text-primary underline">
-                      Sign In
-                    </button>
-                  </>}
-              </p>
-            </div>
-          </motion.div>}
+        {!account && (
+          <AuthForm
+            onAuth={() => {}}
+            register={register}
+            login={login}
+            resetCode={resetCode}
+            setNewPin={setNewPin}
+          />
+        )}
 
         {/* Game Menu (logged in) */}
         {account && mode === "menu" && <motion.div initial={{

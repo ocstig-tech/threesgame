@@ -98,21 +98,30 @@ export type Database = {
       player_accounts: {
         Row: {
           created_at: string
+          failed_reset_attempts: number
           id: string
+          is_locked: boolean
           name: string
           pin_hash: string
+          security_color: string | null
         }
         Insert: {
           created_at?: string
+          failed_reset_attempts?: number
           id?: string
+          is_locked?: boolean
           name: string
           pin_hash: string
+          security_color?: string | null
         }
         Update: {
           created_at?: string
+          failed_reset_attempts?: number
           id?: string
+          is_locked?: boolean
           name?: string
           pin_hash?: string
+          security_color?: string | null
         }
         Relationships: []
       }

@@ -92,7 +92,7 @@ export default function Index() {
             <img src={threesLogo} alt="Threes" className="w-full h-full object-cover" />
           </motion.div>
           <h1 className="text-4xl md:text-5xl font-bold text-primary mb-2 font-serif">
-            THR33s
+            THR33<Link to="/admin" className="text-primary hover:text-primary/70 transition-colors">s</Link>
           </h1>
           <p className="text-muted-foreground">​Bring on the Box Cars                     </p>
         </div>
@@ -193,8 +193,6 @@ export default function Index() {
     
       </p>
       </motion.div>
-      <Link to="/admin" className="absolute bottom-3 right-3 text-muted-foreground/20 hover:text-muted-foreground/50 transition-colors">
-        <Settings className="w-3.5 h-3.5" />
-      </Link>
+      
     </div>;
 }

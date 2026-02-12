@@ -7,6 +7,48 @@ const corsHeaders = {
 };
 
 const COLORS = ["red", "blue", "green", "yellow", "purple", "orange"];
+const ADMIN_TOKEN_EXPIRY_MS = 2 * 60 * 60 * 1000; // 2 hours
+
+// HMAC-based admin token helpers
+async function createAdminToken(): Promise<string> {
+  const secret = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const payload = { role: "admin", exp: Date.now() + ADMIN_TOKEN_EXPIRY_MS };
+  const payloadB64 = btoa(JSON.stringify(payload));
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payloadB64));
+  const sigHex = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, "0")).join("");
+  return `${payloadB64}.${sigHex}`;
+}
+
+async function verifyAdminToken(authHeader: string | null): Promise<boolean> {
+  if (!authHeader) return false;
+  const token = authHeader.replace(/^Bearer\s+/i, "");
+  const parts = token.split(".");
+  if (parts.length !== 2) return false;
+  const [payloadB64, sigHex] = parts;
+  try {
+    const payload = JSON.parse(atob(payloadB64));
+    if (payload.role !== "admin" || payload.exp < Date.now()) return false;
+    const secret = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const key = await crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(secret),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["verify"]
+    );
+    const sigBytes = new Uint8Array(sigHex.match(/.{2}/g)!.map((h: string) => parseInt(h, 16)));
+    return await crypto.subtle.verify("HMAC", key, sigBytes, new TextEncoder().encode(payloadB64));
+  } catch {
+    return false;
+  }
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -258,6 +300,12 @@ Deno.serve(async (req) => {
 
     // ─── ADMIN: CLEAR PIN (host resets a player) ───
     if (action === "admin_clear_pin") {
+      if (!(await verifyAdminToken(req.headers.get("authorization")))) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
       const { data: account, error } = await supabase
         .from("player_accounts")
         .select("id, name")
@@ -284,26 +332,37 @@ Deno.serve(async (req) => {
 
     // ─── ADMIN LOGIN ───
     if (action === "admin_login") {
-      if (trimmedName !== "mastercliff") {
+      const ADMIN_NAME = (Deno.env.get("ADMIN_USERNAME") || "mastercliff").toLowerCase();
+      const ADMIN_PIN = Deno.env.get("ADMIN_PIN") || "7669";
+
+      if (trimmedName !== ADMIN_NAME) {
         return new Response(
           JSON.stringify({ error: "Not authorized" }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      if (pin !== "7669") {
+      if (pin !== ADMIN_PIN) {
         return new Response(
           JSON.stringify({ error: "Incorrect code" }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
+
+      const token = await createAdminToken();
       return new Response(
-        JSON.stringify({ admin: true }),
+        JSON.stringify({ admin: true, token }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     // ─── ADMIN LIST ACCOUNTS ───
     if (action === "admin_list_accounts") {
+      if (!(await verifyAdminToken(req.headers.get("authorization")))) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
       const { data: accounts, error } = await supabase
         .from("player_accounts")
         .select("id, name, is_locked, failed_reset_attempts, created_at, security_color")
@@ -324,6 +383,12 @@ Deno.serve(async (req) => {
 
     // ─── ADMIN DELETE ACCOUNT ───
     if (action === "admin_delete_account") {
+      if (!(await verifyAdminToken(req.headers.get("authorization")))) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
       const { data: account, error: findErr } = await supabase
         .from("player_accounts")
         .select("id, name")

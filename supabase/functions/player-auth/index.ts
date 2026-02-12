@@ -282,6 +282,46 @@ Deno.serve(async (req) => {
       );
     }
 
+    // ─── ADMIN LOGIN ───
+    if (action === "admin_login") {
+      if (trimmedName !== "mastercliff") {
+        return new Response(
+          JSON.stringify({ error: "Not authorized" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (pin !== "7669") {
+        return new Response(
+          JSON.stringify({ error: "Incorrect code" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      return new Response(
+        JSON.stringify({ admin: true }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ─── ADMIN LIST ACCOUNTS ───
+    if (action === "admin_list_accounts") {
+      const { data: accounts, error } = await supabase
+        .from("player_accounts")
+        .select("id, name, is_locked, failed_reset_attempts, created_at, security_color")
+        .order("name");
+
+      if (error) {
+        return new Response(
+          JSON.stringify({ error: "Failed to fetch accounts" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ accounts }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     return new Response(
       JSON.stringify({ error: "Invalid action" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }

@@ -46,7 +46,7 @@ export default function Index() {
       return;
     }
     if (authPin.length !== 4) {
-      toast.error("PIN must be exactly 4 digits");
+      toast.error("Code must be exactly 4 digits");
       return;
     }
     setAuthLoading(true);
@@ -148,7 +148,7 @@ export default function Index() {
               </div>
 
               <div>
-                <Label htmlFor="authPin">4-Digit PIN</Label>
+              <Label htmlFor="authPin">4-Digit Code</Label>
                 <PinInput value={authPin} onChange={setAuthPin} />
               </div>
 
@@ -239,7 +239,7 @@ export default function Index() {
             <div className="space-y-4">
               <div>
                 <Label htmlFor="code">Room Code</Label>
-                <Input id="code" value={roomCode} onChange={e => setRoomCode(e.target.value.toUpperCase())} placeholder="XXXX" className="mt-1.5 text-center text-2xl font-mono tracking-widest uppercase" maxLength={4} />
+                <Input id="code" value={roomCode} onChange={e => setRoomCode(e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="0000" className="mt-1.5 text-center text-2xl font-mono tracking-widest" maxLength={4} inputMode="numeric" />
               </div>
               <div className="flex gap-3 pt-2">
                 <Button variant="outline" onClick={() => setMode("menu")} className="flex-1">

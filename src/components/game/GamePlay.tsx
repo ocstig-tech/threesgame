@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { DiceContainer } from "./Dice";
 import { PlayerCard } from "./PlayerCard";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { BetweenRoundsPrompt } from "./BetweenRoundsPrompt";
 import { rollDice, calculateScore } from "@/lib/gameUtils";
 import threesLogo from "@/assets/threes-logo.jpg";
 import type { Database } from "@/integrations/supabase/types";
@@ -21,6 +22,7 @@ interface GamePlayProps {
   onKeepDice: (keptDice: number[], rollsRemaining: number) => Promise<void>;
   onEndTurn: (finalDice: number[]) => Promise<void>;
   onStartNextRound: () => Promise<void>;
+  onChangeBet: (newBet: number) => Promise<void>;
   onEndGame: () => Promise<void>;
 }
 
@@ -33,6 +35,7 @@ export function GamePlay({
   onKeepDice,
   onEndTurn,
   onStartNextRound,
+  onChangeBet,
   onEndGame,
 }: GamePlayProps) {
   const [dice, setDice] = useState<number[]>([0, 0, 0, 0, 0]);
@@ -164,22 +167,12 @@ export function GamePlay({
         >
           {/* Between-rounds prompt */}
           {isBetweenRounds && (
-            <div className="mb-5 rounded-xl border border-border bg-secondary/30 p-4 text-center">
-              <p className="text-foreground font-medium">Round complete</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                {isHost
-                  ? "Start the next round when everyone is ready."
-                  : "Waiting for the host to start the next round."}
-              </p>
-              {isHost && (
-                <div className="mt-4 flex justify-center">
-                  <Button onClick={onStartNextRound} className="gold-glow" size="lg">
-                    <RotateCcw className="w-5 h-5 mr-2" />
-                    Start Next Round
-                  </Button>
-                </div>
-              )}
-            </div>
+            <BetweenRoundsPrompt
+              isHost={isHost}
+              betAmount={game.bet_amount}
+              onStartNextRound={onStartNextRound}
+              onChangeBet={onChangeBet}
+            />
           )}
 
           <div className="text-center mb-4">

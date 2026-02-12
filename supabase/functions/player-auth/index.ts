@@ -120,7 +120,7 @@ Deno.serve(async (req) => {
 
       if (existing) {
         return new Response(
-          JSON.stringify({ error: "Name already taken" }),
+          JSON.stringify({ error: "Unable to create account. Please try a different name." }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -155,15 +155,20 @@ Deno.serve(async (req) => {
         );
       }
 
+      const GENERIC_AUTH_ERROR = "Invalid name or code. Please check your credentials.";
+
       const { data: account, error } = await supabase
         .from("player_accounts")
         .select("id, name, pin_hash, is_locked")
         .ilike("name", trimmedName)
         .single();
 
+      // Always hash to prevent timing attacks
+      const pinHash = await hashPin(pin);
+
       if (error || !account) {
         return new Response(
-          JSON.stringify({ error: "Account not found. Please create an account first." }),
+          JSON.stringify({ error: GENERIC_AUTH_ERROR }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -183,10 +188,9 @@ Deno.serve(async (req) => {
         );
       }
 
-      const pinHash = await hashPin(pin);
       if (account.pin_hash !== pinHash) {
         return new Response(
-          JSON.stringify({ error: "Incorrect code" }),
+          JSON.stringify({ error: GENERIC_AUTH_ERROR }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }

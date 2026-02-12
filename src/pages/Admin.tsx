@@ -222,11 +222,13 @@ export default function Admin() {
                   )}
                   <div className="flex gap-3 mt-0.5 text-xs text-muted-foreground">
                     <span>{stats[acc.id]?.games_played ?? 0} games</span>
-                    <span className={stats[acc.id]?.total_earnings >= 0 ? "text-green-500" : "text-destructive"}>
+                    <span className={(stats[acc.id]?.total_earnings ?? 0) >= 0 ? "text-green-500" : "text-destructive"}>
                       {(stats[acc.id]?.total_earnings ?? 0) >= 0 ? "+" : ""}{stats[acc.id]?.total_earnings ?? 0} chips
                     </span>
                   </div>
                 </div>
+              </div>
+              <div className="flex gap-2">
                 <Button
                   variant="outline"
                   size="sm"

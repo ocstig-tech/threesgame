@@ -21,6 +21,7 @@ export default function Game() {
     rollForTurnOrder,
     startGame,
     startNextRound,
+    changeBet,
     rollDiceForTurn,
     keepDice,
     endTurn,
@@ -92,6 +93,7 @@ export default function Game() {
       onKeepDice={keepDice}
       onEndTurn={endTurn}
       onStartNextRound={startNextRound}
+      onChangeBet={changeBet}
       onEndGame={endGame}
     />
   );

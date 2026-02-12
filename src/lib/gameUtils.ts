@@ -1,9 +1,9 @@
 // Generate a random 4-character room code
 export function generateRoomCode(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const digits = "0123456789";
   let code = "";
   for (let i = 0; i < 4; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
+    code += digits.charAt(Math.floor(Math.random() * digits.length));
   }
   return code;
 }

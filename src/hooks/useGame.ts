@@ -494,6 +494,15 @@ export function useGame(roomCode: string | null) {
       .eq("id", state.game.id);
   };
 
+  // Change bet amount (host only, between rounds)
+  const changeBet = async (newBet: number) => {
+    if (!state.game) return;
+    await supabase
+      .from("games")
+      .update({ bet_amount: newBet })
+      .eq("id", state.game.id);
+  };
+
   // End the game session
   const endGame = async () => {
     if (!state.game) return;
@@ -513,6 +522,7 @@ export function useGame(roomCode: string | null) {
     rollForTurnOrder,
     startGame,
     startNextRound,
+    changeBet,
     rollDiceForTurn,
     keepDice,
     endTurn,

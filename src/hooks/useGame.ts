@@ -17,6 +17,15 @@ export interface GameState {
   error: string | null;
 }
 
+async function callGameAction(action: string, params: Record<string, unknown> = {}) {
+  const { data, error } = await supabase.functions.invoke("game-actions", {
+    body: { action, ...params },
+  });
+  if (error) throw new Error(error.message || "Request failed");
+  if (data?.error) throw new Error(data.error);
+  return data;
+}
+
 export function useGame(roomCode: string | null) {
   const [state, setState] = useState<GameState>({
     game: null,
@@ -48,7 +57,7 @@ export function useGame(roomCode: string | null) {
   };
   const sessionId = getAccountId();
 
-  // Fetch game and players
+  // Fetch game and players (reads are still direct via RLS SELECT policies)
   const fetchGame = useCallback(async () => {
     if (!roomCode) return;
 
@@ -131,166 +140,48 @@ export function useGame(roomCode: string | null) {
 
   // Create a new game
   const createGame = async (hostName: string, betAmount: number) => {
-    const { generateRoomCode } = await import("@/lib/gameUtils");
-    const newRoomCode = generateRoomCode();
-
-    const { data: game, error: gameError } = await supabase
-      .from("games")
-      .insert({
-        room_code: newRoomCode,
-        host_name: hostName,
-        bet_amount: betAmount,
-      })
-      .select()
-      .single();
-
-    if (gameError) throw gameError;
-
-    // Add host as first player
-    const { error: playerError } = await supabase.from("players").insert({
-      game_id: game.id,
-      name: hostName,
+    const data = await callGameAction("create_game", {
+      host_name: hostName,
+      bet_amount: betAmount,
       session_id: sessionId,
       account_id: sessionId,
     });
-
-    if (playerError) throw playerError;
-
-    return newRoomCode;
+    return data.room_code as string;
   };
 
   // Join an existing game
   const joinGame = async (code: string, playerName: string) => {
-    const { data: game, error: gameError } = await supabase
-      .from("games")
-      .select("*")
-      .eq("room_code", code.toUpperCase())
-      .single();
-
-    if (gameError) throw new Error("Game not found");
-
-    // Check if player already exists
-    const { data: existingPlayer } = await supabase
-      .from("players")
-      .select("*")
-      .eq("game_id", game.id)
-      .eq("session_id", sessionId)
-      .single();
-
-    if (existingPlayer) {
-      return code.toUpperCase();
-    }
-
-    const { error: playerError } = await supabase.from("players").insert({
-      game_id: game.id,
-      name: playerName,
+    const data = await callGameAction("join_game", {
+      room_code: code,
+      player_name: playerName,
       session_id: sessionId,
       account_id: sessionId,
     });
-
-    if (playerError) throw playerError;
-
-    return code.toUpperCase();
+    return data.room_code as string;
   };
 
   // Start roll-off phase
   const startRollOff = async () => {
     if (!state.game) return;
-
-    await supabase
-      .from("games")
-      .update({ status: "roll_off" })
-      .eq("id", state.game.id);
+    await callGameAction("start_roll_off", { game_id: state.game.id });
   };
 
   // Roll for turn order
   const rollForTurnOrder = async () => {
     if (!state.game || !state.myPlayer) return;
-
-    const [rollValue] = rollDice(1);
-
-    await supabase
-      .from("players")
-      .update({ roll_off_value: rollValue })
-      .eq("id", state.myPlayer.id);
+    await callGameAction("roll_for_turn_order", { player_id: state.myPlayer.id });
   };
 
   // Start the game (after roll-off complete)
   const startGame = async () => {
     if (!state.game) return;
-
-    // Get players who have rolled
-    const playersWithRolls = state.players.filter((p) => p.roll_off_value !== null);
-    if (playersWithRolls.length === 0) return;
-
-    // Find the highest roll value
-    const highestRoll = Math.max(...playersWithRolls.map((p) => p.roll_off_value!));
-    
-    // Find all players with the highest roll (potential ties)
-    const topRollers = playersWithRolls.filter((p) => p.roll_off_value === highestRoll);
-
-    // If there's a tie at the top, only those players re-roll
-    if (topRollers.length > 1) {
-      // Reset only the tied players' roll values
-      for (const player of topRollers) {
-        await supabase
-          .from("players")
-          .update({ roll_off_value: null })
-          .eq("id", player.id);
-      }
-
-      // Set status to tie_breaker
-      await supabase
-        .from("games")
-        .update({ status: "tie_breaker" })
-        .eq("id", state.game.id);
-
-      return;
-    }
-
-    // No tie - sort players by roll-off value (highest first)
-    const sortedPlayers = [...playersWithRolls]
-      .sort((a, b) => (b.roll_off_value || 0) - (a.roll_off_value || 0));
-
-    // Assign turn order
-    for (let i = 0; i < sortedPlayers.length; i++) {
-      await supabase
-        .from("players")
-        .update({ 
-          turn_order: i + 1,
-          status: "waiting",
-          kept_dice: [],
-          rolls_remaining: 5,
-          current_score: null,
-        })
-        .eq("id", sortedPlayers[i].id);
-    }
-
-    // Set first player and start game
-    const firstPlayer = sortedPlayers[0];
-    await supabase
-      .from("players")
-      .update({ status: "rolling" })
-      .eq("id", firstPlayer.id);
-
-    // Add chips to pot
-    const potAmount = state.players.length * state.game.bet_amount;
-
-    await supabase
-      .from("games")
-      .update({
-        status: "playing",
-        current_player_id: firstPlayer.id,
-        pot: potAmount,
-      })
-      .eq("id", state.game.id);
+    await callGameAction("start_game", { game_id: state.game.id });
   };
 
-  // Roll dice for current turn
+  // Roll dice for current turn (client-side only, no DB write)
   const rollDiceForTurn = async (keptIndices: number[], currentDice: number[]) => {
     if (!state.myPlayer) return null;
 
-    // Roll new dice for non-kept positions
     const newDice = currentDice.map((die, i) =>
       keptIndices.includes(i) ? die : rollDice(1)[0]
     );
@@ -301,216 +192,39 @@ export function useGame(roomCode: string | null) {
   // Keep dice and update player state
   const keepDice = async (keptDice: number[], rollsRemaining: number) => {
     if (!state.myPlayer) return;
-
-    await supabase
-      .from("players")
-      .update({
-        kept_dice: keptDice,
-        rolls_remaining: rollsRemaining,
-      })
-      .eq("id", state.myPlayer.id);
+    await callGameAction("keep_dice", {
+      player_id: state.myPlayer.id,
+      kept_dice: keptDice,
+      rolls_remaining: rollsRemaining,
+    });
   };
 
   // End turn (player finished their rolls)
   const endTurn = async (finalDice: number[]) => {
     if (!state.game || !state.myPlayer) return;
-
-    const score = calculateScore(finalDice);
-
-    await supabase
-      .from("players")
-      .update({
-        current_score: score,
-        kept_dice: finalDice,
-        status: "finished",
-      })
-      .eq("id", state.myPlayer.id);
-
-    // Find next player
-    const currentOrder = state.myPlayer.turn_order || 0;
-    const nextPlayer = state.players.find(
-      (p) => (p.turn_order || 0) > currentOrder && p.status === "waiting"
-    );
-
-    if (nextPlayer) {
-      // Move to next player
-      await supabase
-        .from("players")
-        .update({ status: "rolling" })
-        .eq("id", nextPlayer.id);
-
-      await supabase
-        .from("games")
-        .update({ current_player_id: nextPlayer.id })
-        .eq("id", state.game.id);
-    } else {
-      // Round complete - determine winner
-      await determineWinner();
-    }
-  };
-
-  // Determine round winner
-  const determineWinner = async () => {
-    if (!state.game) return;
-
-    const finishedPlayers = state.players.filter(
-      (p) => p.status === "finished" && p.current_score !== null
-    );
-
-    if (finishedPlayers.length === 0) return;
-
-    // Find lowest score
-    const lowestScore = Math.min(
-      ...finishedPlayers.map((p) => p.current_score!)
-    );
-    const winners = finishedPlayers.filter(
-      (p) => p.current_score === lowestScore
-    );
-
-    const roundNumber = state.rounds.length + 1;
-
-    if (winners.length > 1) {
-      // Tie! Add to pot and restart
-      await supabase.from("game_rounds").insert({
-        game_id: state.game.id,
-        round_number: roundNumber,
-        was_tie: true,
-        pot_amount: state.game.pot,
-      });
-
-      // Add another bet from each player to pot
-      const newPot = state.game.pot + state.players.length * state.game.bet_amount;
-
-      // Reset all players for new round
-      for (const player of state.players) {
-        await supabase
-          .from("players")
-          .update({
-            roll_off_value: null,
-            kept_dice: [],
-            rolls_remaining: 5,
-            current_score: null,
-            status: "waiting",
-          })
-          .eq("id", player.id);
-      }
-
-      await supabase
-        .from("games")
-        .update({
-          status: "tie_breaker",
-          pot: newPot,
-          current_player_id: null,
-        })
-        .eq("id", state.game.id);
-    } else {
-      // We have a winner!
-      const winner = winners[0];
-      const losers = finishedPlayers.filter((p) => p.id !== winner.id);
-
-      // Update earnings: winner gets +wager per opponent, each loser gets -wager
-      const wager = state.game.bet_amount;
-      const winAmount = wager * losers.length;
-      await supabase
-        .from("players")
-        .update({ total_earnings: (winner.total_earnings || 0) + winAmount })
-        .eq("id", winner.id);
-
-      for (const loser of losers) {
-        await supabase
-          .from("players")
-          .update({
-            total_earnings: (loser.total_earnings || 0) - wager,
-          })
-          .eq("id", loser.id);
-      }
-
-      // Record round
-      await supabase.from("game_rounds").insert({
-        game_id: state.game.id,
-        round_number: roundNumber,
-        winner_id: winner.id,
-        was_tie: false,
-        pot_amount: state.game.pot,
-      });
-
-      // Pause after the round and let the host start the next round.
-      const BETWEEN_ROUNDS = "between_rounds" as unknown as Game["status"];
-      await supabase
-        .from("games")
-        .update({
-          status: BETWEEN_ROUNDS,
-          // Store who starts next round (winner goes first)
-          current_player_id: winner.id,
-        })
-        .eq("id", state.game.id);
-    }
+    await callGameAction("end_turn", {
+      game_id: state.game.id,
+      player_id: state.myPlayer.id,
+      final_dice: finalDice,
+    });
   };
 
   // Start next round after a winner has been determined
   const startNextRound = async () => {
     if (!state.game) return;
-
-    const startingPlayerId = state.game.current_player_id;
-    if (!startingPlayerId) return;
-
-    // Reset all players for new round
-    for (const player of state.players) {
-      await supabase
-        .from("players")
-        .update({
-          roll_off_value: null,
-          kept_dice: [],
-          rolls_remaining: 5,
-          current_score: null,
-          status: "waiting",
-          turn_order: null,
-        })
-        .eq("id", player.id);
-    }
-
-    // Winner rolls first, assign turn order
-    await supabase
-      .from("players")
-      .update({ turn_order: 1, status: "rolling" })
-      .eq("id", startingPlayerId);
-
-    let order = 2;
-    for (const player of state.players.filter((p) => p.id !== startingPlayerId)) {
-      await supabase
-        .from("players")
-        .update({ turn_order: order })
-        .eq("id", player.id);
-      order++;
-    }
-
-    await supabase
-      .from("games")
-      .update({
-        status: "playing",
-        pot: state.players.length * state.game.bet_amount,
-        current_player_id: startingPlayerId,
-      })
-      .eq("id", state.game.id);
+    await callGameAction("start_next_round", { game_id: state.game.id });
   };
 
   // Change bet amount (host only, between rounds)
   const changeBet = async (newBet: number) => {
     if (!state.game) return;
-    await supabase
-      .from("games")
-      .update({ bet_amount: newBet })
-      .eq("id", state.game.id);
+    await callGameAction("change_bet", { game_id: state.game.id, bet_amount: newBet });
   };
 
   // End the game session
   const endGame = async () => {
     if (!state.game) return;
-
-    await supabase
-      .from("games")
-      .update({ status: "finished" })
-      .eq("id", state.game.id);
+    await callGameAction("end_game", { game_id: state.game.id });
   };
 
   return {

@@ -1,0 +1,392 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const ALLOWED_ORIGINS = [
+  "https://threesgame.lovable.app",
+  "https://id-preview--167792c5-866d-4eb6-8181-13a1774ed253.lovable.app",
+  "http://localhost:8080",
+  "http://localhost:5173",
+];
+
+function getCorsHeaders(origin: string | null) {
+  const allowed = origin && ALLOWED_ORIGINS.some((o) => origin.startsWith(o))
+    ? origin
+    : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allowed,
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  };
+}
+
+function rollDie(): number {
+  return Math.floor(Math.random() * 6) + 1;
+}
+
+function calculateScore(dice: number[]): number {
+  return dice.reduce((sum: number, die: number) => sum + (die === 3 ? 0 : die), 0);
+}
+
+function generateRoomCode(): string {
+  const digits = "0123456789";
+  let code = "";
+  for (let i = 0; i < 4; i++) {
+    code += digits.charAt(Math.floor(Math.random() * digits.length));
+  }
+  return code;
+}
+
+Deno.serve(async (req) => {
+  const origin = req.headers.get("origin");
+  const corsHeaders = getCorsHeaders(origin);
+
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
+  const json = (data: unknown, status = 200) =>
+    new Response(JSON.stringify(data), {
+      status,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+
+  try {
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    const body = await req.json();
+    const { action, session_id, game_id, ...params } = body;
+
+    if (!action) return json({ error: "Missing action" }, 400);
+
+    // ─── CREATE GAME ───
+    if (action === "create_game") {
+      const { host_name, bet_amount, account_id } = params;
+      if (!host_name || !session_id) return json({ error: "Missing parameters" }, 400);
+      const bet = Math.max(1, Math.min(100, Number(bet_amount) || 5));
+
+      const roomCode = generateRoomCode();
+      const { data: game, error: gameErr } = await supabase
+        .from("games")
+        .insert({ room_code: roomCode, host_name, bet_amount: bet })
+        .select()
+        .single();
+      if (gameErr) throw gameErr;
+
+      const { error: playerErr } = await supabase.from("players").insert({
+        game_id: game.id,
+        name: host_name,
+        session_id,
+        account_id: account_id || session_id,
+      });
+      if (playerErr) throw playerErr;
+
+      return json({ room_code: roomCode });
+    }
+
+    // ─── JOIN GAME ───
+    if (action === "join_game") {
+      const { room_code, player_name, account_id } = params;
+      if (!room_code || !player_name || !session_id) return json({ error: "Missing parameters" }, 400);
+
+      const { data: game, error: gameErr } = await supabase
+        .from("games")
+        .select("*")
+        .eq("room_code", room_code.toUpperCase())
+        .single();
+      if (gameErr || !game) return json({ error: "Game not found" }, 404);
+
+      // Check if already joined
+      const { data: existing } = await supabase
+        .from("players")
+        .select("id")
+        .eq("game_id", game.id)
+        .eq("session_id", session_id)
+        .single();
+      if (existing) return json({ room_code: room_code.toUpperCase() });
+
+      const { error: playerErr } = await supabase.from("players").insert({
+        game_id: game.id,
+        name: player_name,
+        session_id,
+        account_id: account_id || session_id,
+      });
+      if (playerErr) throw playerErr;
+
+      return json({ room_code: room_code.toUpperCase() });
+    }
+
+    // ─── START ROLL OFF ───
+    if (action === "start_roll_off") {
+      if (!game_id) return json({ error: "Missing game_id" }, 400);
+      await supabase.from("games").update({ status: "roll_off" }).eq("id", game_id);
+      return json({ success: true });
+    }
+
+    // ─── ROLL FOR TURN ORDER ───
+    if (action === "roll_for_turn_order") {
+      const { player_id } = params;
+      if (!player_id) return json({ error: "Missing player_id" }, 400);
+      const rollValue = rollDie();
+      await supabase.from("players").update({ roll_off_value: rollValue }).eq("id", player_id);
+      return json({ roll_value: rollValue });
+    }
+
+    // ─── START GAME (after roll-off) ───
+    if (action === "start_game") {
+      if (!game_id) return json({ error: "Missing game_id" }, 400);
+
+      const { data: game } = await supabase.from("games").select("*").eq("id", game_id).single();
+      if (!game) return json({ error: "Game not found" }, 404);
+
+      const { data: players } = await supabase
+        .from("players")
+        .select("*")
+        .eq("game_id", game_id);
+      if (!players) return json({ error: "No players" }, 400);
+
+      const playersWithRolls = players.filter((p) => p.roll_off_value !== null);
+      if (playersWithRolls.length === 0) return json({ error: "No rolls yet" }, 400);
+
+      const highestRoll = Math.max(...playersWithRolls.map((p) => p.roll_off_value!));
+      const topRollers = playersWithRolls.filter((p) => p.roll_off_value === highestRoll);
+
+      if (topRollers.length > 1) {
+        // Tie - reset only tied players
+        for (const player of topRollers) {
+          await supabase.from("players").update({ roll_off_value: null }).eq("id", player.id);
+        }
+        await supabase.from("games").update({ status: "tie_breaker" }).eq("id", game_id);
+        return json({ tie: true });
+      }
+
+      // Sort by roll value desc
+      const sorted = [...playersWithRolls].sort(
+        (a, b) => (b.roll_off_value || 0) - (a.roll_off_value || 0)
+      );
+
+      for (let i = 0; i < sorted.length; i++) {
+        await supabase
+          .from("players")
+          .update({
+            turn_order: i + 1,
+            status: "waiting",
+            kept_dice: [],
+            rolls_remaining: 5,
+            current_score: null,
+          })
+          .eq("id", sorted[i].id);
+      }
+
+      const firstPlayer = sorted[0];
+      await supabase.from("players").update({ status: "rolling" }).eq("id", firstPlayer.id);
+
+      const potAmount = players.length * game.bet_amount;
+      await supabase
+        .from("games")
+        .update({ status: "playing", current_player_id: firstPlayer.id, pot: potAmount })
+        .eq("id", game_id);
+
+      return json({ success: true });
+    }
+
+    // ─── KEEP DICE ───
+    if (action === "keep_dice") {
+      const { player_id, kept_dice, rolls_remaining } = params;
+      if (!player_id) return json({ error: "Missing player_id" }, 400);
+      await supabase
+        .from("players")
+        .update({ kept_dice, rolls_remaining })
+        .eq("id", player_id);
+      return json({ success: true });
+    }
+
+    // ─── END TURN ───
+    if (action === "end_turn") {
+      const { player_id, final_dice } = params;
+      if (!player_id || !game_id || !final_dice) return json({ error: "Missing parameters" }, 400);
+
+      const score = calculateScore(final_dice);
+
+      await supabase
+        .from("players")
+        .update({ current_score: score, kept_dice: final_dice, status: "finished" })
+        .eq("id", player_id);
+
+      // Get fresh game and players state
+      const { data: game } = await supabase.from("games").select("*").eq("id", game_id).single();
+      const { data: players } = await supabase
+        .from("players")
+        .select("*")
+        .eq("game_id", game_id)
+        .order("turn_order", { ascending: true });
+      if (!game || !players) return json({ error: "Game state error" }, 500);
+
+      const currentPlayer = players.find((p) => p.id === player_id);
+      const currentOrder = currentPlayer?.turn_order || 0;
+      const nextPlayer = players.find(
+        (p) => (p.turn_order || 0) > currentOrder && p.status === "waiting"
+      );
+
+      if (nextPlayer) {
+        await supabase.from("players").update({ status: "rolling" }).eq("id", nextPlayer.id);
+        await supabase.from("games").update({ current_player_id: nextPlayer.id }).eq("id", game_id);
+        return json({ success: true, next_player: nextPlayer.id });
+      }
+
+      // Round complete — determine winner
+      const finishedPlayers = players.filter(
+        (p) => p.status === "finished" && p.current_score !== null
+      );
+      if (finishedPlayers.length === 0) return json({ error: "No finished players" }, 400);
+
+      const { data: rounds } = await supabase
+        .from("game_rounds")
+        .select("*")
+        .eq("game_id", game_id);
+      const roundNumber = (rounds?.length || 0) + 1;
+
+      const lowestScore = Math.min(...finishedPlayers.map((p) => p.current_score!));
+      const winners = finishedPlayers.filter((p) => p.current_score === lowestScore);
+
+      if (winners.length > 1) {
+        // Tie
+        await supabase.from("game_rounds").insert({
+          game_id,
+          round_number: roundNumber,
+          was_tie: true,
+          pot_amount: game.pot,
+        });
+
+        const newPot = game.pot + players.length * game.bet_amount;
+
+        for (const player of players) {
+          await supabase
+            .from("players")
+            .update({
+              roll_off_value: null,
+              kept_dice: [],
+              rolls_remaining: 5,
+              current_score: null,
+              status: "waiting",
+            })
+            .eq("id", player.id);
+        }
+
+        await supabase
+          .from("games")
+          .update({ status: "tie_breaker", pot: newPot, current_player_id: null })
+          .eq("id", game_id);
+
+        return json({ success: true, tie: true });
+      }
+
+      // Winner found
+      const winner = winners[0];
+      const losers = finishedPlayers.filter((p) => p.id !== winner.id);
+      const wager = game.bet_amount;
+      const winAmount = wager * losers.length;
+
+      await supabase
+        .from("players")
+        .update({ total_earnings: (winner.total_earnings || 0) + winAmount })
+        .eq("id", winner.id);
+
+      for (const loser of losers) {
+        await supabase
+          .from("players")
+          .update({ total_earnings: (loser.total_earnings || 0) - wager })
+          .eq("id", loser.id);
+      }
+
+      await supabase.from("game_rounds").insert({
+        game_id,
+        round_number: roundNumber,
+        winner_id: winner.id,
+        was_tie: false,
+        pot_amount: game.pot,
+      });
+
+      await supabase
+        .from("games")
+        .update({ status: "between_rounds", current_player_id: winner.id })
+        .eq("id", game_id);
+
+      return json({ success: true, winner_id: winner.id });
+    }
+
+    // ─── START NEXT ROUND ───
+    if (action === "start_next_round") {
+      if (!game_id) return json({ error: "Missing game_id" }, 400);
+
+      const { data: game } = await supabase.from("games").select("*").eq("id", game_id).single();
+      if (!game) return json({ error: "Game not found" }, 404);
+
+      const startingPlayerId = game.current_player_id;
+      if (!startingPlayerId) return json({ error: "No starting player" }, 400);
+
+      const { data: players } = await supabase
+        .from("players")
+        .select("*")
+        .eq("game_id", game_id);
+      if (!players) return json({ error: "No players" }, 400);
+
+      for (const player of players) {
+        await supabase
+          .from("players")
+          .update({
+            roll_off_value: null,
+            kept_dice: [],
+            rolls_remaining: 5,
+            current_score: null,
+            status: "waiting",
+            turn_order: null,
+          })
+          .eq("id", player.id);
+      }
+
+      await supabase
+        .from("players")
+        .update({ turn_order: 1, status: "rolling" })
+        .eq("id", startingPlayerId);
+
+      let order = 2;
+      for (const player of players.filter((p) => p.id !== startingPlayerId)) {
+        await supabase.from("players").update({ turn_order: order }).eq("id", player.id);
+        order++;
+      }
+
+      await supabase
+        .from("games")
+        .update({
+          status: "playing",
+          pot: players.length * game.bet_amount,
+          current_player_id: startingPlayerId,
+        })
+        .eq("id", game_id);
+
+      return json({ success: true });
+    }
+
+    // ─── CHANGE BET ───
+    if (action === "change_bet") {
+      if (!game_id) return json({ error: "Missing game_id" }, 400);
+      const newBet = Math.max(1, Math.min(100, Number(params.bet_amount) || 5));
+      await supabase.from("games").update({ bet_amount: newBet }).eq("id", game_id);
+      return json({ success: true });
+    }
+
+    // ─── END GAME ───
+    if (action === "end_game") {
+      if (!game_id) return json({ error: "Missing game_id" }, 400);
+      await supabase.from("games").update({ status: "finished" }).eq("id", game_id);
+      return json({ success: true });
+    }
+
+    return json({ error: "Invalid action" }, 400);
+  } catch (err) {
+    console.error("Game action error:", err);
+    return json({ error: "Internal server error" }, 500);
+  }
+});

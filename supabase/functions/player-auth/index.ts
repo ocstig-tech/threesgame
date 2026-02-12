@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
       if (existing) {
         return new Response(
           JSON.stringify({ error: "Name already taken" }),
-          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
@@ -87,15 +87,15 @@ Deno.serve(async (req) => {
 
       if (error || !account) {
         return new Response(
-          JSON.stringify({ error: "Account not found" }),
-          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify({ error: "Account not found. Please create an account first." }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
       if (account.pin_hash !== pinHash) {
         return new Response(
-          JSON.stringify({ error: "Incorrect PIN" }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify({ error: "Incorrect code" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 

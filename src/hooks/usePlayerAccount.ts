@@ -44,7 +44,7 @@ export function usePlayerAccount() {
     });
 
     if (error) throw new Error("Failed to login");
-    if (data.error) throw new Error(data.error);
+    if (data?.error) throw new Error(data.error);
 
     const acc: PlayerAccount = data.account;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(acc));

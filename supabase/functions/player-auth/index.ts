@@ -6,6 +6,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const COLORS = ["red", "blue", "green", "yellow", "purple", "orange"];
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -17,7 +19,7 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const { action, name, pin } = await req.json();
+    const { action, name, pin, security_color } = await req.json();
 
     if (!name || typeof name !== "string" || name.trim().length === 0) {
       return new Response(
@@ -26,24 +28,32 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (!pin || typeof pin !== "string" || !/^\d{4}$/.test(pin)) {
-      return new Response(
-        JSON.stringify({ error: "PIN must be exactly 4 digits" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     const trimmedName = name.trim().toLowerCase();
 
-    // Simple hash using Web Crypto API
-    const encoder = new TextEncoder();
-    const data = encoder.encode(pin + "_threes_salt_" + trimmedName);
-    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const pinHash = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+    // Hash helper
+    async function hashPin(pinVal: string) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(pinVal + "_threes_salt_" + trimmedName);
+      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+    }
 
+    // ─── REGISTER ───
     if (action === "register") {
-      // Check if name already taken
+      if (!pin || typeof pin !== "string" || !/^\d{4}$/.test(pin)) {
+        return new Response(
+          JSON.stringify({ error: "PIN must be exactly 4 digits" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (!security_color || !COLORS.includes(security_color)) {
+        return new Response(
+          JSON.stringify({ error: "Please select a security color" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       const { data: existing } = await supabase
         .from("player_accounts")
         .select("id")
@@ -57,9 +67,10 @@ Deno.serve(async (req) => {
         );
       }
 
+      const pinHash = await hashPin(pin);
       const { data: account, error } = await supabase
         .from("player_accounts")
-        .insert({ name: trimmedName, pin_hash: pinHash })
+        .insert({ name: trimmedName, pin_hash: pinHash, security_color })
         .select("id, name")
         .single();
 
@@ -71,17 +82,24 @@ Deno.serve(async (req) => {
         );
       }
 
-      console.log("Account registered:", account.name);
       return new Response(
         JSON.stringify({ account }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    // ─── LOGIN ───
     if (action === "login") {
+      if (!pin || typeof pin !== "string" || !/^\d{4}$/.test(pin)) {
+        return new Response(
+          JSON.stringify({ error: "PIN must be exactly 4 digits" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       const { data: account, error } = await supabase
         .from("player_accounts")
-        .select("id, name, pin_hash")
+        .select("id, name, pin_hash, is_locked")
         .ilike("name", trimmedName)
         .single();
 
@@ -92,6 +110,22 @@ Deno.serve(async (req) => {
         );
       }
 
+      if (account.is_locked) {
+        return new Response(
+          JSON.stringify({ error: "Account is locked. Ask the host to reset your account." }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // If pin_hash is null, account was cleared — need to set new pin
+      if (!account.pin_hash) {
+        return new Response(
+          JSON.stringify({ needs_new_pin: true, account_id: account.id, account_name: account.name }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const pinHash = await hashPin(pin);
       if (account.pin_hash !== pinHash) {
         return new Response(
           JSON.stringify({ error: "Incorrect code" }),
@@ -99,15 +133,157 @@ Deno.serve(async (req) => {
         );
       }
 
-      console.log("Account logged in:", account.name);
       return new Response(
         JSON.stringify({ account: { id: account.id, name: account.name } }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    // ─── RESET CODE (verify color, set new pin) ───
+    if (action === "reset_code") {
+      if (!security_color || !COLORS.includes(security_color)) {
+        return new Response(
+          JSON.stringify({ error: "Please select your security color" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (!pin || typeof pin !== "string" || !/^\d{4}$/.test(pin)) {
+        return new Response(
+          JSON.stringify({ error: "New PIN must be exactly 4 digits" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const { data: account, error } = await supabase
+        .from("player_accounts")
+        .select("id, name, security_color, failed_reset_attempts, is_locked")
+        .ilike("name", trimmedName)
+        .single();
+
+      if (error || !account) {
+        return new Response(
+          JSON.stringify({ error: "Account not found." }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      if (account.is_locked) {
+        return new Response(
+          JSON.stringify({ error: "Account is locked. Ask the host to reset your account." }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      if (account.security_color !== security_color) {
+        const newAttempts = (account.failed_reset_attempts || 0) + 1;
+        const locked = newAttempts >= 2;
+
+        await supabase
+          .from("player_accounts")
+          .update({ failed_reset_attempts: newAttempts, is_locked: locked })
+          .eq("id", account.id);
+
+        if (locked) {
+          return new Response(
+            JSON.stringify({ error: "Wrong color. Account is now locked. Ask the host to reset it." }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        return new Response(
+          JSON.stringify({ error: `Wrong color. You have ${2 - newAttempts} attempt(s) left.` }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Color matched — set new pin
+      const pinHash = await hashPin(pin);
+      await supabase
+        .from("player_accounts")
+        .update({ pin_hash: pinHash, failed_reset_attempts: 0 })
+        .eq("id", account.id);
+
+      return new Response(
+        JSON.stringify({ account: { id: account.id, name: account.name }, message: "Code updated!" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ─── SET NEW PIN (after host clears it) ───
+    if (action === "set_new_pin") {
+      if (!pin || typeof pin !== "string" || !/^\d{4}$/.test(pin)) {
+        return new Response(
+          JSON.stringify({ error: "PIN must be exactly 4 digits" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (!security_color || !COLORS.includes(security_color)) {
+        return new Response(
+          JSON.stringify({ error: "Please select a new security color" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const { data: account, error } = await supabase
+        .from("player_accounts")
+        .select("id, name, pin_hash")
+        .ilike("name", trimmedName)
+        .single();
+
+      if (error || !account) {
+        return new Response(
+          JSON.stringify({ error: "Account not found." }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      if (account.pin_hash) {
+        return new Response(
+          JSON.stringify({ error: "Account already has a code set. Use login instead." }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const pinHash = await hashPin(pin);
+      await supabase
+        .from("player_accounts")
+        .update({ pin_hash: pinHash, security_color, failed_reset_attempts: 0, is_locked: false })
+        .eq("id", account.id);
+
+      return new Response(
+        JSON.stringify({ account: { id: account.id, name: account.name } }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ─── ADMIN: CLEAR PIN (host resets a player) ───
+    if (action === "admin_clear_pin") {
+      const { data: account, error } = await supabase
+        .from("player_accounts")
+        .select("id, name")
+        .ilike("name", trimmedName)
+        .single();
+
+      if (error || !account) {
+        return new Response(
+          JSON.stringify({ error: "Account not found." }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      await supabase
+        .from("player_accounts")
+        .update({ pin_hash: null, failed_reset_attempts: 0, is_locked: false })
+        .eq("id", account.id);
+
+      return new Response(
+        JSON.stringify({ message: `Account "${account.name}" has been reset. They can set a new code on next login.` }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     return new Response(
-      JSON.stringify({ error: "Invalid action. Use 'register' or 'login'" }),
+      JSON.stringify({ error: "Invalid action" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {

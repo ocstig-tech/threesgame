@@ -44,6 +44,7 @@ const SECURITY_COLORS: Record<string, string> = {
 export default function Admin() {
   const navigate = useNavigate();
   const [authed, setAuthed] = useState(false);
+  const [adminToken, setAdminToken] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [pin, setPin] = useState("");
   const [loading, setLoading] = useState(false);
@@ -64,8 +65,9 @@ export default function Admin() {
       });
       if (error) throw new Error("Request failed");
       if (data?.error) throw new Error(data.error);
-      if (data?.admin) {
+      if (data?.admin && data?.token) {
         setAuthed(true);
+        setAdminToken(data.token);
         toast.success("Admin access granted");
       }
     } catch (err) {
@@ -79,7 +81,8 @@ export default function Admin() {
     setFetching(true);
     try {
       const { data, error } = await supabase.functions.invoke("player-auth", {
-        body: { action: "admin_list_accounts", name: "mastercliff", pin: "0000" },
+        body: { action: "admin_list_accounts", name: "admin" },
+        headers: { Authorization: `Bearer ${adminToken}` },
       });
       if (error) throw error;
       const accs: AccountInfo[] = data?.accounts || [];
@@ -112,7 +115,8 @@ export default function Admin() {
   const handleReset = async (accountName: string) => {
     try {
       const { data, error } = await supabase.functions.invoke("player-auth", {
-        body: { action: "admin_clear_pin", name: accountName, pin: "0000" },
+        body: { action: "admin_clear_pin", name: accountName },
+        headers: { Authorization: `Bearer ${adminToken}` },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
@@ -126,7 +130,8 @@ export default function Admin() {
   const handleDelete = async (accountName: string) => {
     try {
       const { data, error } = await supabase.functions.invoke("player-auth", {
-        body: { action: "admin_delete_account", name: accountName, pin: "0000" },
+        body: { action: "admin_delete_account", name: accountName },
+        headers: { Authorization: `Bearer ${adminToken}` },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);

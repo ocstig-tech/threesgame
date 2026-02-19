@@ -88,6 +88,14 @@ Deno.serve(async (req) => {
 
     const trimmedName = name.trim().toLowerCase();
 
+    // Validate name length
+    if (trimmedName.length > 30) {
+      return new Response(
+        JSON.stringify({ error: "Name must be 30 characters or less" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Hash helper
     async function hashPin(pinVal: string) {
       const encoder = new TextEncoder();

@@ -19,6 +19,31 @@ function getCorsHeaders(origin: string | null) {
   };
 }
 
+// ─── VALIDATION HELPERS ───
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isValidUUID(val: unknown): val is string {
+  return typeof val === "string" && UUID_RE.test(val);
+}
+
+function isValidDiceArray(val: unknown): val is number[] {
+  return (
+    Array.isArray(val) &&
+    val.length >= 0 &&
+    val.length <= 5 &&
+    val.every((d) => typeof d === "number" && Number.isInteger(d) && d >= 1 && d <= 6)
+  );
+}
+
+function isValidName(val: unknown): val is string {
+  return typeof val === "string" && val.trim().length >= 1 && val.trim().length <= 30;
+}
+
+function isValidRoomCode(val: unknown): val is string {
+  return typeof val === "string" && /^[A-Za-z0-9]{4}$/.test(val.trim());
+}
+
 function rollDie(): number {
   return Math.floor(Math.random() * 6) + 1;
 }
@@ -34,6 +59,27 @@ function generateRoomCode(): string {
     code += digits.charAt(Math.floor(Math.random() * digits.length));
   }
   return code;
+}
+
+// ─── HOST AUTHORIZATION HELPER ───
+async function verifyHost(
+  supabase: ReturnType<typeof createClient>,
+  game_id: string,
+  session_id: string
+): Promise<{ authorized: boolean; error?: string }> {
+  const { data: game } = await supabase.from("games").select("host_name").eq("id", game_id).single();
+  if (!game) return { authorized: false, error: "Game not found" };
+
+  const { data: hostPlayer } = await supabase
+    .from("players")
+    .select("id")
+    .eq("game_id", game_id)
+    .eq("name", game.host_name)
+    .eq("session_id", session_id)
+    .single();
+
+  if (!hostPlayer) return { authorized: false, error: "Only the host can perform this action" };
+  return { authorized: true };
 }
 
 Deno.serve(async (req) => {
@@ -59,25 +105,36 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { action, session_id, game_id, ...params } = body;
 
-    if (!action) return json({ error: "Missing action" }, 400);
+    if (!action || typeof action !== "string") return json({ error: "Missing action" }, 400);
+
+    // Validate session_id when provided
+    if (session_id !== undefined && !isValidUUID(session_id)) {
+      return json({ error: "Invalid session_id" }, 400);
+    }
+    // Validate game_id when provided
+    if (game_id !== undefined && !isValidUUID(game_id)) {
+      return json({ error: "Invalid game_id" }, 400);
+    }
 
     // ─── CREATE GAME ───
     if (action === "create_game") {
       const { host_name, bet_amount, account_id } = params;
-      if (!host_name || !session_id) return json({ error: "Missing parameters" }, 400);
+      if (!isValidName(host_name)) return json({ error: "Invalid host name (1-30 chars)" }, 400);
+      if (!session_id) return json({ error: "Missing session_id" }, 400);
+      if (account_id !== undefined && !isValidUUID(account_id)) return json({ error: "Invalid account_id" }, 400);
       const bet = Math.max(1, Math.min(100, Number(bet_amount) || 5));
 
       const roomCode = generateRoomCode();
       const { data: game, error: gameErr } = await supabase
         .from("games")
-        .insert({ room_code: roomCode, host_name, bet_amount: bet })
+        .insert({ room_code: roomCode, host_name: host_name.trim(), bet_amount: bet })
         .select()
         .single();
       if (gameErr) throw gameErr;
 
       const { error: playerErr } = await supabase.from("players").insert({
         game_id: game.id,
-        name: host_name,
+        name: host_name.trim(),
         session_id,
         account_id: account_id || session_id,
       });
@@ -89,7 +146,10 @@ Deno.serve(async (req) => {
     // ─── JOIN GAME ───
     if (action === "join_game") {
       const { room_code, player_name, account_id } = params;
-      if (!room_code || !player_name || !session_id) return json({ error: "Missing parameters" }, 400);
+      if (!isValidRoomCode(room_code)) return json({ error: "Invalid room code" }, 400);
+      if (!isValidName(player_name)) return json({ error: "Invalid player name (1-30 chars)" }, 400);
+      if (!session_id) return json({ error: "Missing session_id" }, 400);
+      if (account_id !== undefined && !isValidUUID(account_id)) return json({ error: "Invalid account_id" }, 400);
 
       const { data: game, error: gameErr } = await supabase
         .from("games")
@@ -109,7 +169,7 @@ Deno.serve(async (req) => {
 
       const { error: playerErr } = await supabase.from("players").insert({
         game_id: game.id,
-        name: player_name,
+        name: player_name.trim(),
         session_id,
         account_id: account_id || session_id,
       });
@@ -118,9 +178,12 @@ Deno.serve(async (req) => {
       return json({ room_code: room_code.toUpperCase() });
     }
 
-    // ─── START ROLL OFF ───
+    // ─── START ROLL OFF (host only) ───
     if (action === "start_roll_off") {
-      if (!game_id) return json({ error: "Missing game_id" }, 400);
+      if (!game_id || !session_id) return json({ error: "Missing parameters" }, 400);
+      const hostCheck = await verifyHost(supabase, game_id, session_id);
+      if (!hostCheck.authorized) return json({ error: hostCheck.error }, 403);
+
       await supabase.from("games").update({ status: "roll_off" }).eq("id", game_id);
       return json({ success: true });
     }
@@ -128,15 +191,17 @@ Deno.serve(async (req) => {
     // ─── ROLL FOR TURN ORDER ───
     if (action === "roll_for_turn_order") {
       const { player_id } = params;
-      if (!player_id) return json({ error: "Missing player_id" }, 400);
+      if (!isValidUUID(player_id)) return json({ error: "Invalid player_id" }, 400);
       const rollValue = rollDie();
       await supabase.from("players").update({ roll_off_value: rollValue }).eq("id", player_id);
       return json({ roll_value: rollValue });
     }
 
-    // ─── START GAME (after roll-off) ───
+    // ─── START GAME (host only, after roll-off) ───
     if (action === "start_game") {
-      if (!game_id) return json({ error: "Missing game_id" }, 400);
+      if (!game_id || !session_id) return json({ error: "Missing parameters" }, 400);
+      const hostCheck = await verifyHost(supabase, game_id, session_id);
+      if (!hostCheck.authorized) return json({ error: hostCheck.error }, 403);
 
       const { data: game } = await supabase.from("games").select("*").eq("id", game_id).single();
       if (!game) return json({ error: "Game not found" }, 404);
@@ -154,7 +219,6 @@ Deno.serve(async (req) => {
       const topRollers = playersWithRolls.filter((p) => p.roll_off_value === highestRoll);
 
       if (topRollers.length > 1) {
-        // Tie - reset only tied players
         for (const player of topRollers) {
           await supabase.from("players").update({ roll_off_value: null }).eq("id", player.id);
         }
@@ -162,7 +226,6 @@ Deno.serve(async (req) => {
         return json({ tie: true });
       }
 
-      // Sort by roll value desc
       const sorted = [...playersWithRolls].sort(
         (a, b) => (b.roll_off_value || 0) - (a.roll_off_value || 0)
       );
@@ -195,7 +258,12 @@ Deno.serve(async (req) => {
     // ─── KEEP DICE ───
     if (action === "keep_dice") {
       const { player_id, kept_dice, rolls_remaining } = params;
-      if (!player_id) return json({ error: "Missing player_id" }, 400);
+      if (!isValidUUID(player_id)) return json({ error: "Invalid player_id" }, 400);
+      if (!isValidDiceArray(kept_dice)) return json({ error: "Invalid kept_dice (must be array of 0-5 dice values 1-6)" }, 400);
+      if (typeof rolls_remaining !== "number" || !Number.isInteger(rolls_remaining) || rolls_remaining < 0 || rolls_remaining > 5) {
+        return json({ error: "Invalid rolls_remaining (0-5)" }, 400);
+      }
+
       await supabase
         .from("players")
         .update({ kept_dice, rolls_remaining })
@@ -206,7 +274,11 @@ Deno.serve(async (req) => {
     // ─── END TURN ───
     if (action === "end_turn") {
       const { player_id, final_dice } = params;
-      if (!player_id || !game_id || !final_dice) return json({ error: "Missing parameters" }, 400);
+      if (!isValidUUID(player_id)) return json({ error: "Invalid player_id" }, 400);
+      if (!game_id) return json({ error: "Missing game_id" }, 400);
+      if (!isValidDiceArray(final_dice) || final_dice.length !== 5) {
+        return json({ error: "Invalid final_dice (must be exactly 5 dice values 1-6)" }, 400);
+      }
 
       const score = calculateScore(final_dice);
 
@@ -215,7 +287,6 @@ Deno.serve(async (req) => {
         .update({ current_score: score, kept_dice: final_dice, status: "finished" })
         .eq("id", player_id);
 
-      // Get fresh game and players state
       const { data: game } = await supabase.from("games").select("*").eq("id", game_id).single();
       const { data: players } = await supabase
         .from("players")
@@ -252,7 +323,6 @@ Deno.serve(async (req) => {
       const winners = finishedPlayers.filter((p) => p.current_score === lowestScore);
 
       if (winners.length > 1) {
-        // Tie
         await supabase.from("game_rounds").insert({
           game_id,
           round_number: roundNumber,
@@ -283,7 +353,6 @@ Deno.serve(async (req) => {
         return json({ success: true, tie: true });
       }
 
-      // Winner found
       const winner = winners[0];
       const losers = finishedPlayers.filter((p) => p.id !== winner.id);
       const wager = game.bet_amount;
@@ -317,9 +386,11 @@ Deno.serve(async (req) => {
       return json({ success: true, winner_id: winner.id });
     }
 
-    // ─── START NEXT ROUND ───
+    // ─── START NEXT ROUND (host only) ───
     if (action === "start_next_round") {
-      if (!game_id) return json({ error: "Missing game_id" }, 400);
+      if (!game_id || !session_id) return json({ error: "Missing parameters" }, 400);
+      const hostCheck = await verifyHost(supabase, game_id, session_id);
+      if (!hostCheck.authorized) return json({ error: hostCheck.error }, 403);
 
       const { data: game } = await supabase.from("games").select("*").eq("id", game_id).single();
       if (!game) return json({ error: "Game not found" }, 404);
@@ -370,17 +441,23 @@ Deno.serve(async (req) => {
       return json({ success: true });
     }
 
-    // ─── CHANGE BET ───
+    // ─── CHANGE BET (host only) ───
     if (action === "change_bet") {
-      if (!game_id) return json({ error: "Missing game_id" }, 400);
+      if (!game_id || !session_id) return json({ error: "Missing parameters" }, 400);
+      const hostCheck = await verifyHost(supabase, game_id, session_id);
+      if (!hostCheck.authorized) return json({ error: hostCheck.error }, 403);
+
       const newBet = Math.max(1, Math.min(100, Number(params.bet_amount) || 5));
       await supabase.from("games").update({ bet_amount: newBet }).eq("id", game_id);
       return json({ success: true });
     }
 
-    // ─── END GAME ───
+    // ─── END GAME (host only) ───
     if (action === "end_game") {
-      if (!game_id) return json({ error: "Missing game_id" }, 400);
+      if (!game_id || !session_id) return json({ error: "Missing parameters" }, 400);
+      const hostCheck = await verifyHost(supabase, game_id, session_id);
+      if (!hostCheck.authorized) return json({ error: hostCheck.error }, 403);
+
       await supabase.from("games").update({ status: "finished" }).eq("id", game_id);
       return json({ success: true });
     }

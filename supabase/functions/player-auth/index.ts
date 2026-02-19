@@ -22,6 +22,49 @@ function getCorsHeaders(origin: string | null) {
 const COLORS = ["red", "blue", "green", "yellow", "purple", "orange"];
 const ADMIN_TOKEN_EXPIRY_MS = 2 * 60 * 60 * 1000; // 2 hours
 
+// ─── ADMIN RATE LIMITING ───
+const adminLoginAttempts = new Map<string, { count: number; resetAt: number }>();
+const ADMIN_MAX_ATTEMPTS = 5;
+const ADMIN_LOCKOUT_MS = 60 * 60 * 1000; // 1 hour
+
+function isAdminRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const entry = adminLoginAttempts.get(ip);
+  if (!entry || now > entry.resetAt) return false;
+  return entry.count >= ADMIN_MAX_ATTEMPTS;
+}
+
+function recordAdminAttempt(ip: string): void {
+  const now = Date.now();
+  const entry = adminLoginAttempts.get(ip);
+  if (!entry || now > entry.resetAt) {
+    adminLoginAttempts.set(ip, { count: 1, resetAt: now + ADMIN_LOCKOUT_MS });
+  } else {
+    entry.count++;
+  }
+}
+
+function clearAdminAttempts(ip: string): void {
+  adminLoginAttempts.delete(ip);
+}
+
+// Constant-time string comparison
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) {
+    // Still compare to avoid timing leak on length difference
+    let result = a.length ^ b.length;
+    for (let i = 0; i < a.length; i++) {
+      result |= a.charCodeAt(i) ^ (b.charCodeAt(i % b.length) || 0);
+    }
+    return result === 0;
+  }
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
 // HMAC-based admin token helpers
 async function createAdminToken(): Promise<string> {
   const secret = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -360,8 +403,18 @@ Deno.serve(async (req) => {
 
     // ─── ADMIN LOGIN ───
     if (action === "admin_login") {
+      const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+
+      if (isAdminRateLimited(clientIp)) {
+        return new Response(
+          JSON.stringify({ error: "Too many attempts. Please try again later." }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       const ADMIN_NAME = Deno.env.get("ADMIN_USERNAME")?.toLowerCase();
       const ADMIN_PIN = Deno.env.get("ADMIN_PIN");
+      const GENERIC_ADMIN_ERROR = "Invalid credentials";
 
       if (!ADMIN_NAME || !ADMIN_PIN) {
         return new Response(
@@ -370,19 +423,18 @@ Deno.serve(async (req) => {
         );
       }
 
-      if (trimmedName !== ADMIN_NAME) {
+      const nameMatch = timingSafeEqual(trimmedName, ADMIN_NAME);
+      const pinMatch = timingSafeEqual(String(pin || ""), ADMIN_PIN);
+
+      if (!nameMatch || !pinMatch) {
+        recordAdminAttempt(clientIp);
         return new Response(
-          JSON.stringify({ error: "Not authorized" }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      if (pin !== ADMIN_PIN) {
-        return new Response(
-          JSON.stringify({ error: "Incorrect code" }),
+          JSON.stringify({ error: GENERIC_ADMIN_ERROR }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
+      clearAdminAttempts(clientIp);
       const token = await createAdminToken();
       return new Response(
         JSON.stringify({ admin: true, token }),

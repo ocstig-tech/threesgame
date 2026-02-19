@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Users, Plus, ArrowRight, LogOut, Settings } from "lucide-react";
+import { Users, Plus, ArrowRight, LogOut, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -193,9 +193,20 @@ export default function Index() {
             </div>
           </motion.div>}
 
-        <p className="text-center text-sm mt-8 font-medium text-primary font-serif px-0">Lowest score wins    •    Threes = Zero    •    For Exhibition Only  
-    
-      </p>
+        <div className="flex items-center justify-center gap-4 mt-8">
+          <p className="text-sm font-medium text-primary font-serif px-0">Lowest score wins    •    Threes = Zero    •    For Exhibition Only</p>
+        </div>
+        <div className="mt-3 text-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/demo")}
+            className="text-muted-foreground/40 hover:text-muted-foreground text-xs"
+          >
+            <Eye className="w-3 h-3 mr-1" />
+            Demo
+          </Button>
+        </div>
       </motion.div>
       
     </div>;

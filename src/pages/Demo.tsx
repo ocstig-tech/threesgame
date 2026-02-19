@@ -47,6 +47,7 @@ export default function Demo() {
   const [isRolling, setIsRolling] = useState(false);
   const [hasRolledOnce, setHasRolledOnce] = useState(false);
   const [roundNumber, setRoundNumber] = useState(1);
+  const [roundResolved, setRoundResolved] = useState(false);
   const [phase, setPhase] = useState<"playing" | "round_over" | "ai_turn">("playing");
   const [message, setMessage] = useState<string | null>("Welcome to the demo! Roll your dice to start.");
 
@@ -196,12 +197,14 @@ export default function Demo() {
     return () => clearTimeout(timer);
   }, [phase, currentPlayerIndex, players.length, finishTurn, resetForTurn]);
 
-  // Resolve round
+  // Resolve round (once)
   useEffect(() => {
-    if (phase !== "round_over") return;
+    if (phase !== "round_over" || roundResolved) return;
 
     const finished = players.filter(p => p.current_score !== null);
     if (finished.length === 0) return;
+
+    setRoundResolved(true);
 
     const lowestScore = Math.min(...finished.map(p => p.current_score!));
     const winners = finished.filter(p => p.current_score === lowestScore);
@@ -215,7 +218,7 @@ export default function Demo() {
     }));
 
     setMessage(`🏆 ${winner.name} wins with ${lowestScore} points! ${winner.name === "You" ? "Nice roll!" : ""}`);
-  }, [phase, players]);
+  }, [phase, roundResolved]);
 
   const startNextRound = () => {
     setPlayers(prev => prev.map(p => ({
@@ -228,6 +231,7 @@ export default function Demo() {
     setCurrentPlayerIndex(0);
     resetForTurn();
     setPhase("playing");
+    setRoundResolved(false);
     setRoundNumber(prev => prev + 1);
     setMessage("New round! Roll your dice.");
   };

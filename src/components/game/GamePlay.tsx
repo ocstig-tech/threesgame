@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Dice1, Check, RotateCcw, Trophy, Coins } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -132,6 +132,32 @@ export function GamePlay({
   const isBetweenRounds = (game.status as unknown as string) === "between_rounds";
   const isHost = players.length > 0 && players[0]?.session_id === myPlayer?.session_id;
 
+  // Auto-end turn after 3 seconds when all dice are kept
+  const [autoEndCountdown, setAutoEndCountdown] = useState<number | null>(null);
+  const autoEndRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (isMyTurn && hasRolledOnce && allDiceKept && !isBetweenRounds) {
+      setAutoEndCountdown(3);
+      autoEndRef.current = setInterval(() => {
+        setAutoEndCountdown(prev => {
+          if (prev === null || prev <= 1) return 0;
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      setAutoEndCountdown(null);
+      if (autoEndRef.current) clearInterval(autoEndRef.current);
+    }
+    return () => { if (autoEndRef.current) clearInterval(autoEndRef.current); };
+  }, [isMyTurn, hasRolledOnce, allDiceKept, isBetweenRounds]);
+
+  useEffect(() => {
+    if (autoEndCountdown === 0 && isMyTurn) {
+      onEndTurn(dice);
+    }
+  }, [autoEndCountdown]);
+
   return (
     <div className="min-h-screen bg-felt p-4 md:p-8 relative">
       <div className="absolute top-4 right-4 z-10">
@@ -224,6 +250,16 @@ export function GamePlay({
                 <p className="text-center text-sm text-destructive mt-2">
                   You must keep at least one die before rolling again!
                 </p>
+              )}
+
+              {allDiceKept && autoEndCountdown !== null && autoEndCountdown > 0 && (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-center text-sm text-primary mt-2 font-medium"
+                >
+                  Ending turn in {autoEndCountdown}s… tap a die to cancel
+                </motion.p>
               )}
             </>
           ) : (

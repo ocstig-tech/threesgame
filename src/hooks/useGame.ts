@@ -163,7 +163,7 @@ export function useGame(roomCode: string | null) {
   // Start roll-off phase
   const startRollOff = async () => {
     if (!state.game) return;
-    await callGameAction("start_roll_off", { game_id: state.game.id });
+    await callGameAction("start_roll_off", { game_id: state.game.id, session_id: sessionId });
   };
 
   // Roll for turn order
@@ -175,7 +175,7 @@ export function useGame(roomCode: string | null) {
   // Start the game (after roll-off complete)
   const startGame = async () => {
     if (!state.game) return;
-    await callGameAction("start_game", { game_id: state.game.id });
+    await callGameAction("start_game", { game_id: state.game.id, session_id: sessionId });
   };
 
   // Roll dice for current turn (client-side only, no DB write)
@@ -212,19 +212,19 @@ export function useGame(roomCode: string | null) {
   // Start next round after a winner has been determined
   const startNextRound = async () => {
     if (!state.game) return;
-    await callGameAction("start_next_round", { game_id: state.game.id });
+    await callGameAction("start_next_round", { game_id: state.game.id, session_id: sessionId });
   };
 
   // Change bet amount (host only, between rounds)
   const changeBet = async (newBet: number) => {
     if (!state.game) return;
-    await callGameAction("change_bet", { game_id: state.game.id, bet_amount: newBet });
+    await callGameAction("change_bet", { game_id: state.game.id, bet_amount: newBet, session_id: sessionId });
   };
 
   // End the game session
   const endGame = async () => {
     if (!state.game) return;
-    await callGameAction("end_game", { game_id: state.game.id });
+    await callGameAction("end_game", { game_id: state.game.id, session_id: sessionId });
   };
 
   return {

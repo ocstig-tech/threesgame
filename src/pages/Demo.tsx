@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Dice1, Check, RotateCcw, Coins, ArrowLeft, Play, SkipForward } from "lucide-react";
@@ -64,6 +64,33 @@ export default function Demo() {
   const canRoll = isMyTurn && rollsRemaining > 0 && !isRolling && !mustKeepDie && !allDiceKept && phase === "playing";
   const canEndTurn = isMyTurn && hasRolledOnce && (rollsRemaining === 0 || allDiceKept) && phase === "playing";
   const canKeepAllAndEnd = isMyTurn && hasRolledOnce && !allDiceKept && phase === "playing";
+
+  // Auto-end turn after 3 seconds when all dice are kept
+  const [autoEndCountdown, setAutoEndCountdown] = useState<number | null>(null);
+  const autoEndRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (isMyTurn && hasRolledOnce && allDiceKept && phase === "playing") {
+      setAutoEndCountdown(3);
+      autoEndRef.current = setInterval(() => {
+        setAutoEndCountdown(prev => {
+          if (prev === null || prev <= 1) return 0;
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      setAutoEndCountdown(null);
+      if (autoEndRef.current) clearInterval(autoEndRef.current);
+    }
+    return () => { if (autoEndRef.current) clearInterval(autoEndRef.current); };
+  }, [isMyTurn, hasRolledOnce, allDiceKept, phase]);
+
+  useEffect(() => {
+    if (autoEndCountdown === 0 && isMyTurn && phase === "playing") {
+      finishTurn(0, dice);
+      advanceToNext(1);
+    }
+  }, [autoEndCountdown]);
 
   const resetForTurn = useCallback(() => {
     setDice([0, 0, 0, 0, 0]);
@@ -334,6 +361,16 @@ export default function Demo() {
                 <p className="text-center text-sm text-destructive mt-2">
                   You must keep at least one die before rolling again!
                 </p>
+              )}
+
+              {allDiceKept && autoEndCountdown !== null && autoEndCountdown > 0 && (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-center text-sm text-primary mt-2 font-medium"
+                >
+                  Ending turn in {autoEndCountdown}s… tap a die to cancel
+                </motion.p>
               )}
             </>
           )}

@@ -95,9 +95,14 @@ export default function Index() {
         }} className="w-38 h-38 mx-auto mb-4 rounded-2xl overflow-hidden dice-shadow">
             <img src={threesLogo} alt="Threes" className="w-full h-full object-cover" />
           </motion.div>
-          <h1 className="text-3xl md:text-4xl font-bold text-primary mb-2 font-serif tracking-[0.25em]">
-            THR33<Link to="/admin" className="text-primary hover:text-primary/70 transition-colors">s</Link>
-          </h1>
+          <div className="mb-2">
+            <h1 className="font-mono font-bold text-primary leading-none tracking-[0.3em] text-center">
+              <span className="block text-2xl md:text-3xl">THR</span>
+              <span className="block text-3xl md:text-4xl -mt-1">
+                33<Link to="/admin" className="text-primary hover:text-primary/70 transition-colors">S</Link>
+              </span>
+            </h1>
+          </div>
           <p className="text-muted-foreground">​Bring on the Box Cars                     </p>
         </div>
 

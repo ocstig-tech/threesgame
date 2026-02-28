@@ -228,19 +228,14 @@ export function AuthForm({ onAuth, register, login, resetCode, setNewPin }: Auth
         {/* Mode switching links */}
         <div className="text-center text-sm text-muted-foreground space-y-1">
           {mode === "login" && (
-            <>
-              <p>
-                New player?{" "}
-                <button onClick={() => { setMode("register"); setPin(""); setColor(""); }} className="text-primary underline">
-                  Create Account
-                </button>
-              </p>
-              <p>
-                <button onClick={() => { setMode("forgot"); setPin(""); setColor(""); }} className="text-primary underline">
-                  Forgot Code?
-                </button>
-              </p>
-            </>
+            <div className="flex justify-between">
+              <button onClick={() => { setMode("register"); setPin(""); setColor(""); }} className="text-primary underline">
+                New Player
+              </button>
+              <button onClick={() => { setMode("forgot"); setPin(""); setColor(""); }} className="text-primary underline">
+                Forgot Code?
+              </button>
+            </div>
           )}
           {mode === "register" && (
             <p>

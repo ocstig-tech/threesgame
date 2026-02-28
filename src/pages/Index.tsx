@@ -92,7 +92,7 @@ export default function Index() {
         }} transition={{
           type: "spring",
           duration: 0.8
-        }} className="w-32 h-32 mx-auto mb-4 rounded-2xl overflow-hidden dice-shadow">
+        }} className="w-48 h-48 mx-auto mb-4 rounded-2xl overflow-hidden dice-shadow">
             <img src={threesLogo} alt="Threes" className="w-full h-full object-cover" />
           </motion.div>
           <h1 className="text-4xl md:text-5xl font-bold text-primary mb-2 font-serif">

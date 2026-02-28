@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import Game from "./pages/Game";
 import Admin from "./pages/Admin";
 import Demo from "./pages/Demo";
+import FontPreview from "./pages/FontPreview";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/game/:roomCode" element={<Game />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/demo" element={<Demo />} />
+          <Route path="/fonts" element={<FontPreview />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

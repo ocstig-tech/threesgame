@@ -4,7 +4,7 @@ import { Dice1, Check, RotateCcw, Trophy, Coins } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DiceContainer } from "./Dice";
 import { PlayerCard } from "./PlayerCard";
-import { ThemeToggle } from "@/components/ThemeToggle";
+
 import { BetweenRoundsPrompt } from "./BetweenRoundsPrompt";
 import { rollDice, calculateScore } from "@/lib/gameUtils";
 import threesLogo from "@/assets/threes-logo.jpg";
@@ -160,9 +160,6 @@ export function GamePlay({
 
   return (
     <div className="min-h-screen bg-felt p-4 md:p-8 relative">
-      <div className="absolute top-4 right-4 z-10">
-        <ThemeToggle />
-      </div>
 
       <div className="max-w-4xl mx-auto">
         {/* Header */}

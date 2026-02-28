@@ -5,7 +5,7 @@ import { Dice1, Check, RotateCcw, Coins, ArrowLeft, Play, SkipForward } from "lu
 import { Button } from "@/components/ui/button";
 import { DiceContainer } from "@/components/game/Dice";
 import { PlayerCard } from "@/components/game/PlayerCard";
-import { ThemeToggle } from "@/components/ThemeToggle";
+
 import { rollDice, calculateScore } from "@/lib/gameUtils";
 import threesLogo from "@/assets/threes-logo.jpg";
 
@@ -267,9 +267,6 @@ export default function Demo() {
 
   return (
     <div className="min-h-screen bg-felt p-4 md:p-8 relative">
-      <div className="absolute top-4 right-4 z-10">
-        <ThemeToggle />
-      </div>
       <div className="absolute top-4 left-4 z-10">
         <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="text-muted-foreground">
           <ArrowLeft className="w-4 h-4 mr-1" /> Back

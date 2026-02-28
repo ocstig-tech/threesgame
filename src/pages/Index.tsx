@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useGame } from "@/hooks/useGame";
 import { usePlayerAccount } from "@/hooks/usePlayerAccount";
-import { ThemeToggle } from "@/components/ThemeToggle";
+
 import { AuthForm } from "@/components/game/AuthForm";
 import { toast } from "sonner";
 import threesLogo from "@/assets/threes-logo.png";
@@ -66,13 +66,12 @@ export default function Index() {
   };
   if (accountLoading) return null;
   return <div className="min-h-screen bg-felt flex items-center justify-center p-4" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
-      <div className="absolute top-4 right-4 flex items-center gap-2">
-        {account && <Button variant="ghost" size="sm" onClick={logout} className="text-muted-foreground">
-            <LogOut className="w-4 h-4 mr-1" />
-            {account.name}
-          </Button>}
-        <ThemeToggle />
-      </div>
+      {account && <div className="absolute top-4 right-4">
+        <Button variant="ghost" size="sm" onClick={logout} className="text-muted-foreground">
+          <LogOut className="w-4 h-4 mr-1" />
+          {account.name}
+        </Button>
+      </div>}
 
       <motion.div initial={{
       opacity: 0,

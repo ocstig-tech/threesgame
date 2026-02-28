@@ -186,6 +186,10 @@ Deno.serve(async (req) => {
       const hostCheck = await verifyHost(supabase, game_id, session_id);
       if (!hostCheck.authorized) return json({ error: hostCheck.error }, 403);
 
+      // Guard: only transition from "waiting"
+      const { data: game } = await supabase.from("games").select("status").eq("id", game_id).single();
+      if (!game || game.status !== "waiting") return json({ error: "Unable to complete action" }, 409);
+
       await supabase.from("games").update({ status: "roll_off" }).eq("id", game_id);
       return json({ success: true });
     }
@@ -207,6 +211,8 @@ Deno.serve(async (req) => {
 
       const { data: game } = await supabase.from("games").select("*").eq("id", game_id).single();
       if (!game) return json({ error: "Unable to complete action" }, 404);
+      // Guard: only start from roll_off or tie_breaker
+      if (game.status !== "roll_off" && game.status !== "tie_breaker") return json({ error: "Unable to complete action" }, 409);
 
       const { data: players } = await supabase
         .from("players")
@@ -266,6 +272,10 @@ Deno.serve(async (req) => {
         return json({ error: "Invalid rolls_remaining (0-5)" }, 400);
       }
 
+      // Guard: player must be in "rolling" status
+      const { data: player } = await supabase.from("players").select("status").eq("id", player_id).single();
+      if (!player || player.status !== "rolling") return json({ error: "Unable to complete action" }, 409);
+
       await supabase
         .from("players")
         .update({ kept_dice, rolls_remaining })
@@ -281,6 +291,14 @@ Deno.serve(async (req) => {
       if (!isValidDiceArray(final_dice) || final_dice.length !== 5) {
         return json({ error: "Invalid final_dice (must be exactly 5 dice values 1-6)" }, 400);
       }
+
+      // Guard: player must be in "rolling" status to prevent duplicate end_turn
+      const { data: currentPlayerCheck } = await supabase.from("players").select("status").eq("id", player_id).single();
+      if (!currentPlayerCheck || currentPlayerCheck.status !== "rolling") return json({ error: "Unable to complete action" }, 409);
+
+      // Guard: game must be in "playing" status
+      const { data: gameCheck } = await supabase.from("games").select("status, current_player_id").eq("id", game_id).single();
+      if (!gameCheck || gameCheck.status !== "playing" || gameCheck.current_player_id !== player_id) return json({ error: "Unable to complete action" }, 409);
 
       const score = calculateScore(final_dice);
 
@@ -396,6 +414,8 @@ Deno.serve(async (req) => {
 
       const { data: game } = await supabase.from("games").select("*").eq("id", game_id).single();
       if (!game) return json({ error: "Unable to complete action" }, 404);
+      // Guard: only transition from "between_rounds"
+      if (game.status !== "between_rounds") return json({ error: "Unable to complete action" }, 409);
 
       const startingPlayerId = game.current_player_id;
       if (!startingPlayerId) return json({ error: "Unable to complete action" }, 400);

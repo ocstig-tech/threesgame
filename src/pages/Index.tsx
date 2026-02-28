@@ -137,7 +137,7 @@ export default function Index() {
         x: 0
       }} className="bg-card/80 backdrop-blur-sm rounded-2xl p-6 card-glow">
             <h2 className="text-xl font-semibold text-foreground mb-6">Create a Game</h2>
-            <div className="space-y-4">
+            <form onSubmit={(e) => { e.preventDefault(); handleCreate(); }} className="space-y-4">
               <div>
                 <Label htmlFor="bet">Chips Per Round</Label>
                 <div className="flex items-center gap-2 mt-1.5">
@@ -156,15 +156,15 @@ export default function Index() {
                 </p>
               </div>
               <div className="flex gap-3 pt-2">
-                <Button variant="outline" onClick={() => setMode("menu")} className="flex-1">
+                <Button type="button" variant="outline" onClick={() => setMode("menu")} className="flex-1">
                   Back
                 </Button>
-                <Button onClick={handleCreate} disabled={isLoading} className="flex-1 gold-glow">
+                <Button type="submit" disabled={isLoading} className="flex-1 gold-glow">
                   {isLoading ? "Creating..." : "Create"}
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </div>
-            </div>
+            </form>
           </motion.div>}
 
         {/* Join Game Form */}
@@ -176,21 +176,21 @@ export default function Index() {
         x: 0
       }} className="bg-card/80 backdrop-blur-sm rounded-2xl p-6 card-glow">
             <h2 className="text-xl font-semibold text-foreground mb-6">Join a Game</h2>
-            <div className="space-y-4">
+            <form onSubmit={(e) => { e.preventDefault(); handleJoin(); }} className="space-y-4">
               <div>
                 <Label htmlFor="code">Room Code</Label>
                 <Input id="code" value={roomCode} onChange={e => setRoomCode(e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="0000" className="mt-1.5 text-center text-2xl font-mono tracking-widest" maxLength={4} inputMode="numeric" />
               </div>
               <div className="flex gap-3 pt-2">
-                <Button variant="outline" onClick={() => setMode("menu")} className="flex-1">
+                <Button type="button" variant="outline" onClick={() => setMode("menu")} className="flex-1">
                   Back
                 </Button>
-                <Button onClick={handleJoin} disabled={isLoading} className="flex-1 gold-glow">
+                <Button type="submit" disabled={isLoading} className="flex-1 gold-glow">
                   {isLoading ? "Joining..." : "Join"}
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </div>
-            </div>
+            </form>
           </motion.div>}
 
         <div className="flex items-center justify-center gap-4 mt-8">

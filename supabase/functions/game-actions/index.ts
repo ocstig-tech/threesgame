@@ -134,15 +134,15 @@ Deno.serve(async (req) => {
         .single();
       if (gameErr) throw gameErr;
 
-      const { error: playerErr } = await supabase.from("players").insert({
+      const { data: player, error: playerErr } = await supabase.from("players").insert({
         game_id: game.id,
         name: host_name.trim(),
         session_id,
         account_id: account_id || session_id,
-      });
+      }).select("id").single();
       if (playerErr) throw playerErr;
 
-      return json({ room_code: roomCode });
+      return json({ room_code: roomCode, player_id: player.id });
     }
 
     // ─── JOIN GAME ───
@@ -167,17 +167,17 @@ Deno.serve(async (req) => {
         .eq("game_id", game.id)
         .eq("session_id", session_id)
         .single();
-      if (existing) return json({ room_code: room_code.toUpperCase() });
+      if (existing) return json({ room_code: room_code.toUpperCase(), player_id: existing.id });
 
-      const { error: playerErr } = await supabase.from("players").insert({
+      const { data: player, error: playerErr } = await supabase.from("players").insert({
         game_id: game.id,
         name: player_name.trim(),
         session_id,
         account_id: account_id || session_id,
-      });
+      }).select("id").single();
       if (playerErr) throw playerErr;
 
-      return json({ room_code: room_code.toUpperCase() });
+      return json({ room_code: room_code.toUpperCase(), player_id: player.id });
     }
 
     // ─── START ROLL OFF (host only) ───

@@ -4,15 +4,15 @@ import { Users, Play, Dice1 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PlayerCard } from "./PlayerCard";
 
+import type { PublicPlayer } from "@/hooks/useGame";
 import type { Database } from "@/integrations/supabase/types";
 
 type Game = Database["public"]["Tables"]["games"]["Row"];
-type Player = Database["public"]["Tables"]["players"]["Row"];
 
 interface GameLobbyProps {
   game: Game;
-  players: Player[];
-  myPlayer: Player | null;
+  players: PublicPlayer[];
+  myPlayer: PublicPlayer | null;
   isHost: boolean;
   onStartRollOff: () => void;
   onRollForTurn: () => void;

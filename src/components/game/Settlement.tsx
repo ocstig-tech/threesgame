@@ -3,13 +3,13 @@ import { Trophy, TrendingUp, TrendingDown, Minus, RotateCcw, Home } from "lucide
 import { Button } from "@/components/ui/button";
 import { formatChips } from "@/lib/gameUtils";
 import { cn } from "@/lib/utils";
+import type { PublicPlayer } from "@/hooks/useGame";
 import type { Database } from "@/integrations/supabase/types";
 
-type Player = Database["public"]["Tables"]["players"]["Row"];
 type GameRound = Database["public"]["Tables"]["game_rounds"]["Row"];
 
 interface SettlementProps {
-  players: Player[];
+  players: PublicPlayer[];
   rounds: GameRound[];
   betAmount: number;
   onNewGame: () => void;

@@ -4,14 +4,29 @@ import { rollDice, calculateScore } from "@/lib/gameUtils";
 import type { Database } from "@/integrations/supabase/types";
 
 type Game = Database["public"]["Tables"]["games"]["Row"];
-type Player = Database["public"]["Tables"]["players"]["Row"];
 type GameRound = Database["public"]["Tables"]["game_rounds"]["Row"];
+
+// Public player type - excludes session_id and account_id
+export interface PublicPlayer {
+  id: string;
+  game_id: string;
+  name: string;
+  status: Database["public"]["Enums"]["player_status"];
+  is_active: boolean;
+  current_score: number | null;
+  kept_dice: number[] | null;
+  rolls_remaining: number | null;
+  roll_off_value: number | null;
+  turn_order: number | null;
+  total_earnings: number;
+  created_at: string;
+}
 
 export interface GameState {
   game: Game | null;
-  players: Player[];
-  currentPlayer: Player | null;
-  myPlayer: Player | null;
+  players: PublicPlayer[];
+  currentPlayer: PublicPlayer | null;
+  myPlayer: PublicPlayer | null;
   rounds: GameRound[];
   isLoading: boolean;
   error: string | null;
@@ -26,6 +41,17 @@ async function callGameAction(action: string, params: Record<string, unknown> = 
   return data;
 }
 
+// Store/retrieve my player ID for a given room code
+function storeMyPlayerId(roomCode: string, playerId: string) {
+  const key = `threes_player_${roomCode.toUpperCase()}`;
+  localStorage.setItem(key, playerId);
+}
+
+function getMyPlayerId(roomCode: string): string | null {
+  const key = `threes_player_${roomCode.toUpperCase()}`;
+  return localStorage.getItem(key);
+}
+
 export function useGame(roomCode: string | null) {
   const [state, setState] = useState<GameState>({
     game: null,
@@ -37,7 +63,7 @@ export function useGame(roomCode: string | null) {
     error: null,
   });
 
-  // Use account ID as session identifier
+  // Use account ID as session identifier (for edge function calls)
   const getAccountId = (): string => {
     try {
       const stored = localStorage.getItem("threes_account");
@@ -46,7 +72,6 @@ export function useGame(roomCode: string | null) {
         return acc.id;
       }
     } catch {}
-    // Fallback to legacy session ID
     const key = "threes_session_id";
     let sid = localStorage.getItem(key);
     if (!sid) {
@@ -57,7 +82,7 @@ export function useGame(roomCode: string | null) {
   };
   const sessionId = getAccountId();
 
-  // Fetch game and players (reads are still direct via RLS SELECT policies)
+  // Fetch game and players via the public view
   const fetchGame = useCallback(async () => {
     if (!roomCode) return;
 
@@ -70,8 +95,9 @@ export function useGame(roomCode: string | null) {
 
       if (gameError) throw gameError;
 
+      // Query the public view (no session_id/account_id)
       const { data: players, error: playersError } = await supabase
-        .from("players")
+        .from("players_public" as any)
         .select("*")
         .eq("game_id", game.id)
         .order("turn_order", { ascending: true, nullsFirst: false });
@@ -86,13 +112,19 @@ export function useGame(roomCode: string | null) {
 
       if (roundsError) throw roundsError;
 
-      const myPlayer = players.find((p) => p.session_id === sessionId) || null;
+      const typedPlayers = (players || []) as unknown as PublicPlayer[];
+
+      // Identify "my player" via stored player ID
+      const myPlayerId = getMyPlayerId(roomCode);
+      const myPlayer = myPlayerId
+        ? typedPlayers.find((p) => p.id === myPlayerId) || null
+        : null;
       const currentPlayer =
-        players.find((p) => p.id === game.current_player_id) || null;
+        typedPlayers.find((p) => p.id === game.current_player_id) || null;
 
       setState({
         game,
-        players,
+        players: typedPlayers,
         currentPlayer,
         myPlayer,
         rounds: rounds || [],
@@ -146,6 +178,8 @@ export function useGame(roomCode: string | null) {
       session_id: sessionId,
       account_id: sessionId,
     });
+    // Store player ID for "my player" identification
+    storeMyPlayerId(data.room_code, data.player_id);
     return data.room_code as string;
   };
 
@@ -157,6 +191,7 @@ export function useGame(roomCode: string | null) {
       session_id: sessionId,
       account_id: sessionId,
     });
+    storeMyPlayerId(data.room_code, data.player_id);
     return data.room_code as string;
   };
 

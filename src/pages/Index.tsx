@@ -66,12 +66,6 @@ export default function Index() {
   };
   if (accountLoading) return null;
   return <div className="min-h-screen bg-felt flex items-center justify-center p-4" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
-      {account && <div className="absolute top-4 right-4">
-        <Button variant="ghost" size="sm" onClick={logout} className="text-muted-foreground">
-          <LogOut className="w-4 h-4 mr-1" />
-          {account.name}
-        </Button>
-      </div>}
 
       <motion.div initial={{
       opacity: 0,
@@ -192,10 +186,10 @@ export default function Index() {
             </form>
           </motion.div>}
 
-        <div className="flex items-center justify-center gap-4 mt-8">
-          <p className="text-sm font-medium text-primary font-serif px-0">Lowest score wins    •    Threes = Zero    •    For Exhibition Only</p>
-        </div>
-        <div className="mt-3 text-center">
+        <p className="text-xs sm:text-sm font-medium text-primary font-serif text-center mt-8 leading-relaxed">
+          Lowest score wins&nbsp;&nbsp;•&nbsp;&nbsp;Threes = Zero&nbsp;&nbsp;•&nbsp;&nbsp;For Exhibition Only
+        </p>
+        <div className="mt-3 flex items-center justify-center gap-3">
           <Button
             variant="ghost"
             size="sm"
@@ -205,6 +199,12 @@ export default function Index() {
             <Eye className="w-3 h-3 mr-1" />
             Demo
           </Button>
+          {account && (
+            <Button variant="ghost" size="sm" onClick={logout} className="text-muted-foreground/40 hover:text-muted-foreground text-xs">
+              <LogOut className="w-3 h-3 mr-1" />
+              {account.name}
+            </Button>
+          )}
         </div>
       </motion.div>
       

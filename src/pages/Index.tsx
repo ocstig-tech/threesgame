@@ -65,7 +65,7 @@ export default function Index() {
     }
   };
   if (accountLoading) return null;
-  return <div className="min-h-screen bg-felt flex items-center justify-center p-4">
+  return <div className="min-h-screen bg-felt flex items-center justify-center p-4" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
       <div className="absolute top-4 right-4 flex items-center gap-2">
         {account && <Button variant="ghost" size="sm" onClick={logout} className="text-muted-foreground">
             <LogOut className="w-4 h-4 mr-1" />

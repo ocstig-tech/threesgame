@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Users, Play, Dice1 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PlayerCard } from "./PlayerCard";
-import { ThemeToggle } from "@/components/ThemeToggle";
+
 import type { Database } from "@/integrations/supabase/types";
 
 type Game = Database["public"]["Tables"]["games"]["Row"];
@@ -77,10 +77,6 @@ export function GameLobby({
 
   return (
     <div className="min-h-screen bg-felt p-4 md:p-8 relative">
-      {/* Theme Toggle - Top Right */}
-      <div className="absolute top-4 right-4">
-        <ThemeToggle />
-      </div>
 
       <motion.div
         initial={{ opacity: 0, y: -20 }}

@@ -301,15 +301,14 @@ export default function Admin() {
               />
             </div>
             <div>
-              <Label>4-Digit Code</Label>
+              <Label>Admin Code (4-20 chars)</Label>
               <Input
-                type="text"
-                inputMode="numeric"
-                maxLength={4}
+                type="password"
+                maxLength={20}
                 value={pin}
-                onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                placeholder="••••"
-                className="mt-1.5 text-center text-2xl font-mono tracking-[0.5em]"
+                onChange={(e) => setPin(e.target.value.slice(0, 20))}
+                placeholder="Enter code"
+                className="mt-1.5 text-center text-xl font-mono tracking-widest"
               />
             </div>
             <Button onClick={handleLogin} disabled={loading} className="w-full gold-glow" size="lg">

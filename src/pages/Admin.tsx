@@ -152,29 +152,20 @@ export default function Admin() {
       const accs: AccountInfo[] = data?.accounts || [];
       setAccounts(accs);
 
-      // Fetch all players data in one query
-      const { data: allPlayers } = await supabase
-        .from("players")
-        .select("account_id, total_earnings, game_id, current_score, created_at");
+      // Fetch stats via admin edge function (service role, bypasses RLS)
+      const { data: statsData, error: statsError } = await supabase.functions.invoke("player-auth", {
+        body: { action: "admin_get_stats", name: "admin" },
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+      if (statsError) throw statsError;
 
-      // Fetch all rounds data
-      const { data: allRounds } = await supabase
-        .from("game_rounds")
-        .select("winner_id, game_id");
-
-      // Fetch all games for active games
-      const { data: allGames } = await supabase
-        .from("games")
-        .select("id, room_code, status, host_name, bet_amount, pot, created_at")
-        .in("status", ["waiting", "roll_off", "playing", "tie_breaker", "between_rounds"]);
+      const allPlayers = statsData?.players || [];
+      const allRounds = statsData?.rounds || [];
+      const allGames = statsData?.active_games || [];
 
       // Build player ID to account ID map
-      const { data: playerIdMap } = await supabase
-        .from("players")
-        .select("id, account_id");
-
       const pidToAccount: Record<string, string> = {};
-      playerIdMap?.forEach((p) => {
+      allPlayers.forEach((p: any) => {
         if (p.account_id) pidToAccount[p.id] = p.account_id;
       });
 
@@ -182,7 +173,7 @@ export default function Admin() {
       const activeGamesList: ActiveGame[] = [];
       if (allGames) {
         for (const g of allGames) {
-          const playerCount = allPlayers?.filter((p) => p.game_id === g.id).length || 0;
+          const playerCount = allPlayers.filter((p: any) => p.game_id === g.id).length || 0;
           activeGamesList.push({
             id: g.id,
             room_code: g.room_code,
@@ -202,24 +193,24 @@ export default function Admin() {
       let totalChipsWon = 0;
 
       for (const acc of accs) {
-        const accountPlayers = allPlayers?.filter((p) => p.account_id === acc.id) || [];
-        const uniqueGames = new Set(accountPlayers.map((p) => p.game_id));
-        const totalEarnings = accountPlayers.reduce((sum, p) => sum + (p.total_earnings || 0), 0);
+        const accountPlayers = allPlayers.filter((p: any) => p.account_id === acc.id) || [];
+        const uniqueGames = new Set(accountPlayers.map((p: any) => p.game_id));
+        const totalEarnings = accountPlayers.reduce((sum: number, p: any) => sum + (p.total_earnings || 0), 0);
 
         // Rounds won by this account
-        const roundsWon = allRounds?.filter((r) => r.winner_id && pidToAccount[r.winner_id] === acc.id).length || 0;
+        const roundsWon = allRounds.filter((r: any) => r.winner_id && pidToAccount[r.winner_id] === acc.id).length || 0;
 
         // Total rounds this account participated in
-        const accountGameIds = new Set(accountPlayers.map((p) => p.game_id));
-        const roundsPlayed = allRounds?.filter((r) => accountGameIds.has(r.game_id)).length || 0;
+        const accountGameIds = new Set(accountPlayers.map((p: any) => p.game_id));
+        const roundsPlayed = allRounds.filter((r: any) => accountGameIds.has(r.game_id)).length || 0;
 
         // Best and worst scores
-        const scores = accountPlayers.map((p) => p.current_score).filter((s): s is number => s !== null && s > 0);
+        const scores = accountPlayers.map((p: any) => p.current_score).filter((s: any): s is number => s !== null && s > 0);
         const bestScore = scores.length > 0 ? Math.min(...scores) : null;
         const worstScore = scores.length > 0 ? Math.max(...scores) : null;
 
         // Last played
-        const dates = accountPlayers.map((p) => p.created_at).sort();
+        const dates = accountPlayers.map((p: any) => p.created_at).sort();
         const lastPlayed = dates.length > 0 ? dates[dates.length - 1] : null;
 
         if (totalEarnings > 0) totalChipsWon += totalEarnings;
@@ -237,11 +228,11 @@ export default function Admin() {
       setStats(statsMap);
 
       // Overall stats
-      const allGameIds = new Set(allPlayers?.map((p) => p.game_id) || []);
+      const allGameIds = new Set(allPlayers.map((p: any) => p.game_id) || []);
       setOverallStats({
         totalAccounts: accs.length,
         totalGamesPlayed: allGameIds.size,
-        totalRoundsPlayed: allRounds?.length || 0,
+        totalRoundsPlayed: allRounds.length || 0,
         totalChipsWon,
         activeGames: activeGamesList.length,
       });

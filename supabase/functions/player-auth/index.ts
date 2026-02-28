@@ -512,6 +512,33 @@ Deno.serve(async (req) => {
       );
     }
 
+    // ─── ADMIN GET STATS (players + rounds + active games data) ───
+    if (action === "admin_get_stats") {
+      if (!(await verifyAdminToken(req.headers.get("authorization")))) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const [playersRes, roundsRes, gamesRes] = await Promise.all([
+        supabase.from("players").select("id, account_id, total_earnings, game_id, current_score, created_at"),
+        supabase.from("game_rounds").select("winner_id, game_id"),
+        supabase.from("games")
+          .select("id, room_code, status, host_name, bet_amount, pot, created_at")
+          .in("status", ["waiting", "roll_off", "playing", "tie_breaker", "between_rounds"]),
+      ]);
+
+      return new Response(
+        JSON.stringify({
+          players: playersRes.data || [],
+          rounds: roundsRes.data || [],
+          active_games: gamesRes.data || [],
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     return new Response(
       JSON.stringify({ error: "Invalid action" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }

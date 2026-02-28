@@ -9,15 +9,15 @@ import { BetweenRoundsPrompt } from "./BetweenRoundsPrompt";
 import { rollDice, calculateScore } from "@/lib/gameUtils";
 import threesLogo from "@/assets/threes-logo.jpg";
 import type { Database } from "@/integrations/supabase/types";
+import type { PublicPlayer } from "@/hooks/useGame";
 
 type Game = Database["public"]["Tables"]["games"]["Row"];
-type Player = Database["public"]["Tables"]["players"]["Row"];
 
 interface GamePlayProps {
   game: Game;
-  players: Player[];
-  currentPlayer: Player | null;
-  myPlayer: Player | null;
+  players: PublicPlayer[];
+  currentPlayer: PublicPlayer | null;
+  myPlayer: PublicPlayer | null;
   onRollDice: (keptIndices: number[], currentDice: number[]) => Promise<number[] | null>;
   onKeepDice: (keptDice: number[], rollsRemaining: number) => Promise<void>;
   onEndTurn: (finalDice: number[]) => Promise<void>;
@@ -130,7 +130,7 @@ export function GamePlay({
   );
 
   const isBetweenRounds = (game.status as unknown as string) === "between_rounds";
-  const isHost = players.length > 0 && players[0]?.session_id === myPlayer?.session_id;
+  const isHost = players.length > 0 && myPlayer != null && players[0]?.id === myPlayer.id;
 
   // Auto-end turn after 3 seconds when all dice are kept
   const [autoEndCountdown, setAutoEndCountdown] = useState<number | null>(null);
@@ -355,7 +355,7 @@ export function GamePlay({
         </div>
 
         {/* End Game Button (host only) */}
-        {myPlayer && players[0]?.session_id === myPlayer.session_id && (
+        {myPlayer && players[0]?.id === myPlayer.id && (
           <div className="mt-8 text-center">
             <Button
               onClick={onEndGame}

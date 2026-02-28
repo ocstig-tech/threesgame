@@ -57,6 +57,13 @@ export type Database = {
             referencedRelation: "players"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "game_rounds_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "players_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       games: {
@@ -193,7 +200,59 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      players_public: {
+        Row: {
+          created_at: string | null
+          current_score: number | null
+          game_id: string | null
+          id: string | null
+          is_active: boolean | null
+          kept_dice: number[] | null
+          name: string | null
+          roll_off_value: number | null
+          rolls_remaining: number | null
+          status: Database["public"]["Enums"]["player_status"] | null
+          total_earnings: number | null
+          turn_order: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          current_score?: number | null
+          game_id?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          kept_dice?: number[] | null
+          name?: string | null
+          roll_off_value?: number | null
+          rolls_remaining?: number | null
+          status?: Database["public"]["Enums"]["player_status"] | null
+          total_earnings?: number | null
+          turn_order?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          current_score?: number | null
+          game_id?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          kept_dice?: number[] | null
+          name?: string | null
+          roll_off_value?: number | null
+          rolls_remaining?: number | null
+          status?: Database["public"]["Enums"]["player_status"] | null
+          total_earnings?: number | null
+          turn_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "players_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       [_ in never]: never

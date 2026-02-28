@@ -6,6 +6,8 @@ const ALLOWED_ORIGINS = [
   "https://167792c5-866d-4eb6-8181-13a1774ed253.lovableproject.com",
   "http://localhost:8080",
   "http://localhost:5173",
+  "capacitor://localhost",
+  "http://localhost",
 ];
 
 function getCorsHeaders(origin: string | null) {

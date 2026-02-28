@@ -95,8 +95,8 @@ export default function Index() {
         }} className="w-38 h-38 mx-auto mb-4 rounded-2xl overflow-hidden dice-shadow">
             <img src={threesLogo} alt="Threes" className="w-full h-full object-cover" />
           </motion.div>
-          <h1 className="text-4xl md:text-5xl font-semibold text-primary mb-2 tracking-[0.35em]" style={{ fontFamily: "'Cinzel', serif", WebkitTextStroke: '1.5px hsl(0, 70%, 45%)', paintOrder: 'stroke fill' }}>
-            THR33<Link to="/admin" className="text-primary hover:text-primary/70 transition-colors" style={{ fontFamily: "'Cinzel', serif", WebkitTextStroke: '1.5px hsl(0, 70%, 45%)', paintOrder: 'stroke fill' }}>s</Link>
+          <h1 className="text-4xl md:text-5xl font-bold text-primary mb-2 tracking-[0.3em]" style={{ fontFamily: "'Bodoni Moda', serif", WebkitTextStroke: '1.5px hsl(0, 70%, 45%)', paintOrder: 'stroke fill' }}>
+            THR33<Link to="/admin" className="text-primary hover:text-primary/70 transition-colors" style={{ fontFamily: "'Bodoni Moda', serif", WebkitTextStroke: '1.5px hsl(0, 70%, 45%)', paintOrder: 'stroke fill' }}>s</Link>
           </h1>
           <p className="text-muted-foreground">​Bring on the Box Cars                     </p>
         </div>

@@ -158,7 +158,7 @@ Deno.serve(async (req) => {
         .select("*")
         .eq("room_code", room_code.toUpperCase())
         .single();
-      if (gameErr || !game) return json({ error: "Game not found" }, 404);
+      if (gameErr || !game) return json({ error: "Unable to join game" }, 404);
 
       // Check if already joined
       const { data: existing } = await supabase
@@ -206,16 +206,16 @@ Deno.serve(async (req) => {
       if (!hostCheck.authorized) return json({ error: hostCheck.error }, 403);
 
       const { data: game } = await supabase.from("games").select("*").eq("id", game_id).single();
-      if (!game) return json({ error: "Game not found" }, 404);
+      if (!game) return json({ error: "Unable to complete action" }, 404);
 
       const { data: players } = await supabase
         .from("players")
         .select("*")
         .eq("game_id", game_id);
-      if (!players) return json({ error: "No players" }, 400);
+      if (!players) return json({ error: "Unable to complete action" }, 400);
 
       const playersWithRolls = players.filter((p) => p.roll_off_value !== null);
-      if (playersWithRolls.length === 0) return json({ error: "No rolls yet" }, 400);
+      if (playersWithRolls.length === 0) return json({ error: "Unable to complete action" }, 400);
 
       const highestRoll = Math.max(...playersWithRolls.map((p) => p.roll_off_value!));
       const topRollers = playersWithRolls.filter((p) => p.roll_off_value === highestRoll);
@@ -295,7 +295,7 @@ Deno.serve(async (req) => {
         .select("*")
         .eq("game_id", game_id)
         .order("turn_order", { ascending: true });
-      if (!game || !players) return json({ error: "Game state error" }, 500);
+      if (!game || !players) return json({ error: "Unable to complete action" }, 500);
 
       const currentPlayer = players.find((p) => p.id === player_id);
       const currentOrder = currentPlayer?.turn_order || 0;
@@ -313,7 +313,7 @@ Deno.serve(async (req) => {
       const finishedPlayers = players.filter(
         (p) => p.status === "finished" && p.current_score !== null
       );
-      if (finishedPlayers.length === 0) return json({ error: "No finished players" }, 400);
+      if (finishedPlayers.length === 0) return json({ error: "Unable to complete action" }, 400);
 
       const { data: rounds } = await supabase
         .from("game_rounds")
@@ -395,16 +395,16 @@ Deno.serve(async (req) => {
       if (!hostCheck.authorized) return json({ error: hostCheck.error }, 403);
 
       const { data: game } = await supabase.from("games").select("*").eq("id", game_id).single();
-      if (!game) return json({ error: "Game not found" }, 404);
+      if (!game) return json({ error: "Unable to complete action" }, 404);
 
       const startingPlayerId = game.current_player_id;
-      if (!startingPlayerId) return json({ error: "No starting player" }, 400);
+      if (!startingPlayerId) return json({ error: "Unable to complete action" }, 400);
 
       const { data: players } = await supabase
         .from("players")
         .select("*")
         .eq("game_id", game_id);
-      if (!players) return json({ error: "No players" }, 400);
+      if (!players) return json({ error: "Unable to complete action" }, 400);
 
       for (const player of players) {
         await supabase
@@ -466,7 +466,8 @@ Deno.serve(async (req) => {
 
     return json({ error: "Invalid action" }, 400);
   } catch (err) {
-    console.error("Game action error:", err);
-    return json({ error: "Internal server error" }, 500);
+    const requestId = crypto.randomUUID();
+    console.error(`[${requestId}] Game action error:`, err);
+    return json({ error: "Internal server error", requestId }, 500);
   }
 });

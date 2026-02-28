@@ -14,16 +14,15 @@ const SECURITY_COLORS = [
   { name: "orange", bg: "bg-orange-500", ring: "ring-orange-400" },
 ];
 
-function PinInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function CodeInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
     <Input
-      type="text"
-      inputMode="numeric"
-      maxLength={4}
+      type="password"
+      maxLength={20}
       value={value}
-      onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(0, 4))}
-      placeholder="••••"
-      className="text-center text-2xl font-mono tracking-[0.5em] mt-1.5"
+      onChange={(e) => onChange(e.target.value.slice(0, 20))}
+      placeholder="Enter code"
+      className="text-center text-xl font-mono tracking-widest mt-1.5"
     />
   );
 }
@@ -77,7 +76,7 @@ export function AuthForm({ onAuth, register, login, resetCode, setNewPin }: Auth
 
   const handleLogin = async () => {
     if (!name.trim()) return toast.error("Please enter your name");
-    if (pin.length !== 4) return toast.error("Code must be exactly 4 digits");
+    if (pin.length < 4) return toast.error("Code must be at least 4 characters");
 
     setLoading(true);
     try {
@@ -101,7 +100,7 @@ export function AuthForm({ onAuth, register, login, resetCode, setNewPin }: Auth
 
   const handleRegister = async () => {
     if (!name.trim()) return toast.error("Please enter your name");
-    if (pin.length !== 4) return toast.error("Code must be exactly 4 digits");
+    if (pin.length < 4) return toast.error("Code must be at least 4 characters");
     if (!color) return toast.error("Please select a security color");
 
     setLoading(true);
@@ -119,7 +118,7 @@ export function AuthForm({ onAuth, register, login, resetCode, setNewPin }: Auth
   const handleForgot = async () => {
     if (!name.trim()) return toast.error("Please enter your name");
     if (!color) return toast.error("Select your security color");
-    if (pin.length !== 4) return toast.error("New code must be exactly 4 digits");
+    if (pin.length < 4) return toast.error("New code must be at least 4 characters");
 
     setLoading(true);
     try {
@@ -134,7 +133,7 @@ export function AuthForm({ onAuth, register, login, resetCode, setNewPin }: Auth
   };
 
   const handleSetNewPin = async () => {
-    if (pin.length !== 4) return toast.error("Code must be exactly 4 digits");
+    if (pin.length < 4) return toast.error("Code must be at least 4 characters");
     if (!color) return toast.error("Please select a security color");
 
     setLoading(true);
@@ -186,8 +185,8 @@ export function AuthForm({ onAuth, register, login, resetCode, setNewPin }: Auth
 
         {/* Pin input */}
         <div>
-          <Label>{mode === "forgot" ? "New 4-Digit Code" : "4-Digit Code"}</Label>
-          <PinInput value={pin} onChange={setPin} />
+          <Label>{mode === "forgot" ? "New Code (4-20 chars)" : "Code (4-20 chars)"}</Label>
+          <CodeInput value={pin} onChange={setPin} />
         </div>
 
         {/* Color picker for register, forgot, and set_new_pin */}

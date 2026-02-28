@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface PlayerAccount {
@@ -7,18 +7,37 @@ export interface PlayerAccount {
 }
 
 const STORAGE_KEY = "threes_account";
+const TIMESTAMP_KEY = "threes_account_ts";
+const SESSION_TIMEOUT_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+function isSessionExpired(): boolean {
+  const ts = localStorage.getItem(TIMESTAMP_KEY);
+  if (!ts) return true;
+  return Date.now() - Number(ts) > SESSION_TIMEOUT_MS;
+}
+
+function touchSession() {
+  localStorage.setItem(TIMESTAMP_KEY, String(Date.now()));
+}
 
 export function usePlayerAccount() {
   const [account, setAccount] = useState<PlayerAccount | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        setAccount(JSON.parse(stored));
-      } catch {
-        localStorage.removeItem(STORAGE_KEY);
+    if (isSessionExpired()) {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(TIMESTAMP_KEY);
+    } else {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        try {
+          setAccount(JSON.parse(stored));
+          touchSession();
+        } catch {
+          localStorage.removeItem(STORAGE_KEY);
+          localStorage.removeItem(TIMESTAMP_KEY);
+        }
       }
     }
     setIsLoading(false);
@@ -34,6 +53,7 @@ export function usePlayerAccount() {
 
     const acc: PlayerAccount = data.account;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(acc));
+    touchSession();
     setAccount(acc);
     return acc;
   };
@@ -53,6 +73,7 @@ export function usePlayerAccount() {
 
     const acc: PlayerAccount = data.account;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(acc));
+    touchSession();
     setAccount(acc);
     return acc;
   };
@@ -67,6 +88,7 @@ export function usePlayerAccount() {
 
     const acc: PlayerAccount = data.account;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(acc));
+    touchSession();
     setAccount(acc);
     return acc;
   };
@@ -81,6 +103,7 @@ export function usePlayerAccount() {
 
     const acc: PlayerAccount = data.account;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(acc));
+    touchSession();
     setAccount(acc);
     return acc;
   };
@@ -98,6 +121,7 @@ export function usePlayerAccount() {
 
   const logout = () => {
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(TIMESTAMP_KEY);
     setAccount(null);
   };
 

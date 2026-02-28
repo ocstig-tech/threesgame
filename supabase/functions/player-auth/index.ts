@@ -152,9 +152,9 @@ Deno.serve(async (req) => {
 
     // ─── REGISTER ───
     if (action === "register") {
-      if (!pin || typeof pin !== "string" || !/^\d{4}$/.test(pin)) {
+      if (!pin || typeof pin !== "string" || pin.length < 4 || pin.length > 20) {
         return new Response(
-          JSON.stringify({ error: "PIN must be exactly 4 digits" }),
+          JSON.stringify({ error: "Code must be 4-20 characters" }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -201,9 +201,9 @@ Deno.serve(async (req) => {
 
     // ─── LOGIN ───
     if (action === "login") {
-      if (!pin || typeof pin !== "string" || !/^\d{4}$/.test(pin)) {
+      if (!pin || typeof pin !== "string" || pin.length < 4 || pin.length > 20) {
         return new Response(
-          JSON.stringify({ error: "PIN must be exactly 4 digits" }),
+          JSON.stringify({ error: "Code must be 4-20 characters" }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -228,7 +228,7 @@ Deno.serve(async (req) => {
 
       if (account.is_locked) {
         return new Response(
-          JSON.stringify({ error: "Account is locked. Ask the host to reset your account." }),
+          JSON.stringify({ error: GENERIC_AUTH_ERROR }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -262,9 +262,9 @@ Deno.serve(async (req) => {
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      if (!pin || typeof pin !== "string" || !/^\d{4}$/.test(pin)) {
+      if (!pin || typeof pin !== "string" || pin.length < 4 || pin.length > 20) {
         return new Response(
-          JSON.stringify({ error: "New PIN must be exactly 4 digits" }),
+          JSON.stringify({ error: "New code must be 4-20 characters" }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -277,14 +277,14 @@ Deno.serve(async (req) => {
 
       if (error || !account) {
         return new Response(
-          JSON.stringify({ error: "Account not found." }),
+          JSON.stringify({ error: "Unable to complete request. Please check your credentials." }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
       if (account.is_locked) {
         return new Response(
-          JSON.stringify({ error: "Account is locked. Ask the host to reset your account." }),
+          JSON.stringify({ error: "Unable to complete request. Please check your credentials." }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -326,9 +326,9 @@ Deno.serve(async (req) => {
 
     // ─── SET NEW PIN (after host clears it) ───
     if (action === "set_new_pin") {
-      if (!pin || typeof pin !== "string" || !/^\d{4}$/.test(pin)) {
+      if (!pin || typeof pin !== "string" || pin.length < 4 || pin.length > 20) {
         return new Response(
-          JSON.stringify({ error: "PIN must be exactly 4 digits" }),
+          JSON.stringify({ error: "Code must be 4-20 characters" }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -347,7 +347,7 @@ Deno.serve(async (req) => {
 
       if (error || !account) {
         return new Response(
-          JSON.stringify({ error: "Account not found." }),
+          JSON.stringify({ error: "Unable to complete request. Please check your credentials." }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -544,9 +544,10 @@ Deno.serve(async (req) => {
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
-    console.error("Auth error:", err);
+    const requestId = crypto.randomUUID();
+    console.error(`[${requestId}] Auth error:`, err);
     return new Response(
-      JSON.stringify({ error: "Internal server error" }),
+      JSON.stringify({ error: "Internal server error", requestId }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

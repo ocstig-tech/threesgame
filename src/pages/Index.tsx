@@ -10,7 +10,7 @@ import { usePlayerAccount } from "@/hooks/usePlayerAccount";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AuthForm } from "@/components/game/AuthForm";
 import { toast } from "sonner";
-import threesLogo from "@/assets/threes-logo.jpg";
+import threesLogo from "@/assets/threes-logo.png";
 export default function Index() {
   const navigate = useNavigate();
   const {

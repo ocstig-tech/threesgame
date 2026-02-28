@@ -185,7 +185,7 @@ export function AuthForm({ onAuth, register, login, resetCode, setNewPin }: Auth
 
         {/* Pin input */}
         <div>
-          <Label>{mode === "forgot" ? "New Code (4-20 chars)" : "Code (4-20 chars)"}</Label>
+          <Label>{mode === "forgot" ? "New 4-Digit PIN" : "4-Digit PIN"}</Label>
           <CodeInput value={pin} onChange={setPin} />
         </div>
 

@@ -230,7 +230,7 @@ export function AuthForm({ onAuth, register, login, resetCode, setNewPin }: Auth
           {mode === "login" && (
             <div className="flex justify-between">
               <button onClick={() => { setMode("register"); setPin(""); setColor(""); }} className="text-primary underline">
-                New Player
+                Create New Player Account
               </button>
               <button onClick={() => { setMode("forgot"); setPin(""); setColor(""); }} className="text-primary underline">
                 Forgot Code?

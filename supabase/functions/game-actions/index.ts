@@ -383,18 +383,26 @@ Deno.serve(async (req) => {
 
       const winner = winners[0];
       const losers = finishedPlayers.filter((p) => p.id !== winner.id);
-      const wager = game.bet_amount;
-      const winAmount = wager * losers.length;
+
+      // Check how many push rounds preceded this win to calculate total owed per player
+      const { data: tieRounds } = await supabase
+        .from("game_rounds")
+        .select("was_tie")
+        .eq("game_id", game_id)
+        .eq("was_tie", true);
+      const pushCount = tieRounds?.length || 0;
+      // Each player owes: bet_amount * (1 + pushCount) — original ante + each push ante
+      const perPlayerLoss = game.bet_amount * (1 + pushCount);
 
       await supabase
         .from("players")
-        .update({ total_earnings: (winner.total_earnings || 0) + winAmount })
+        .update({ total_earnings: (winner.total_earnings || 0) + perPlayerLoss * losers.length })
         .eq("id", winner.id);
 
       for (const loser of losers) {
         await supabase
           .from("players")
-          .update({ total_earnings: (loser.total_earnings || 0) - wager })
+          .update({ total_earnings: (loser.total_earnings || 0) - perPlayerLoss })
           .eq("id", loser.id);
       }
 

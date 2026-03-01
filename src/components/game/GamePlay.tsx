@@ -159,7 +159,7 @@ export function GamePlay({
   }, [autoEndCountdown]);
 
   return (
-    <div className="min-h-screen bg-felt p-4 md:p-8 relative">
+    <div className="min-h-screen bg-felt p-4 md:p-8 relative" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1rem)" }}>
 
       <div className="max-w-4xl mx-auto">
         {/* Header */}

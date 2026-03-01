@@ -1,5 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Lock } from "lucide-react";
 
@@ -11,23 +10,28 @@ interface DiceProps {
   onClick?: () => void;
   size?: "sm" | "md" | "lg";
   disabled?: boolean;
-  /** Random position/rotation for scattered layout */
-  scatter?: { x: number; y: number; rotate: number };
 }
 
-// Classic pip positions as percentage offsets from center
-const pipLayouts: Record<number, [number, number][]> = {
-  1: [[0, 0]],
-  2: [[-1, -1], [1, 1]],
-  3: [[-1, -1], [0, 0], [1, 1]],
-  4: [[-1, -1], [1, -1], [-1, 1], [1, 1]],
-  5: [[-1, -1], [1, -1], [0, 0], [-1, 1], [1, 1]],
-  6: [[-1, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [1, 1]],
+const dotPositions: Record<number, [number, number][]> = {
+  1: [[50, 50]],
+  2: [[25, 25], [75, 75]],
+  3: [[25, 25], [50, 50], [75, 75]],
+  4: [[25, 25], [75, 25], [25, 75], [75, 75]],
+  5: [[25, 25], [75, 25], [50, 50], [25, 75], [75, 75]],
+  6: [[25, 25], [75, 25], [25, 50], [75, 50], [25, 75], [75, 75]],
 };
 
-const sizePx = { sm: 44, md: 56, lg: 64 };
-const pipSize = { sm: 6, md: 8, lg: 10 };
-const pipSpread = { sm: 10, md: 13, lg: 15 };
+const sizeClasses = {
+  sm: "w-10 h-10",
+  md: "w-14 h-14",
+  lg: "w-16 h-16",
+};
+
+const dotSizes = {
+  sm: "w-1.5 h-1.5",
+  md: "w-2 h-2",
+  lg: "w-2.5 h-2.5",
+};
 
 export function Dice({
   value,
@@ -37,105 +41,55 @@ export function Dice({
   onClick,
   size = "md",
   disabled = false,
-  scatter,
 }: DiceProps) {
-  const pips = pipLayouts[value] || [];
+  const dots = dotPositions[value] || [];
   const isThree = value === 3;
-  const s = sizePx[size];
-  const ps = pipSize[size];
-  const spread = pipSpread[size];
 
   return (
     <motion.button
       onClick={onClick}
       disabled={disabled || isRolling || isLocked}
-      layout
-      style={{
-        width: s,
-        height: s,
-        x: scatter?.x ?? 0,
-        y: scatter?.y ?? 0,
-      }}
       className={cn(
-        "relative cursor-pointer flex-shrink-0",
+        sizeClasses[size],
+        "relative rounded-lg cursor-pointer transition-all duration-200",
+        "bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600",
+        "dice-shadow",
+        isKept && !isLocked && "ring-2 ring-emerald-400 ring-offset-2 ring-offset-background",
+        isLocked && "ring-2 ring-muted-foreground/50 ring-offset-2 ring-offset-background opacity-70",
+        isThree && "from-emerald-400 via-emerald-500 to-emerald-600",
         (disabled || isLocked) && "cursor-not-allowed",
+        !disabled && !isRolling && !isLocked && "hover:scale-105 active:scale-95"
       )}
       animate={
         isRolling
           ? {
-              rotate: [0, 120, 240, 360],
-              scale: [1, 0.8, 1.15, 1],
-              x: [scatter?.x ?? 0, (scatter?.x ?? 0) + 8, (scatter?.x ?? 0) - 5, scatter?.x ?? 0],
-              y: [scatter?.y ?? 0, (scatter?.y ?? 0) - 12, (scatter?.y ?? 0) + 6, scatter?.y ?? 0],
+              rotate: [0, 90, 180, 270, 360],
+              scale: [1, 1.1, 1, 1.1, 1],
             }
-          : {
-              rotate: scatter?.rotate ?? 0,
-              scale: 1,
-              x: scatter?.x ?? 0,
-              y: scatter?.y ?? 0,
-            }
+          : { rotate: 0, scale: 1 }
       }
       transition={
         isRolling
-          ? { duration: 0.45, repeat: Infinity, ease: "easeInOut" }
-          : { type: "spring", stiffness: 300, damping: 20 }
+          ? { duration: 0.5, repeat: Infinity, ease: "linear" }
+          : { duration: 0.2 }
       }
-      whileHover={!disabled && !isRolling && !isLocked ? { scale: 1.1, zIndex: 10 } : undefined}
-      whileTap={!disabled && !isRolling && !isLocked ? { scale: 0.9 } : undefined}
+      whileHover={!disabled && !isRolling && !isLocked ? { scale: 1.05 } : undefined}
+      whileTap={!disabled && !isRolling && !isLocked ? { scale: 0.95 } : undefined}
     >
-      {/* Die body — 3D ivory look */}
-      <div
-        className={cn(
-          "w-full h-full rounded-[18%] relative overflow-hidden",
-          isKept && !isLocked && "ring-2 ring-emerald-400 ring-offset-2 ring-offset-background",
-          isLocked && "ring-2 ring-muted-foreground/50 ring-offset-2 ring-offset-background opacity-60",
-        )}
-        style={{
-          background: isThree
-            ? "linear-gradient(145deg, #4ade80 0%, #22c55e 40%, #16a34a 100%)"
-            : "linear-gradient(145deg, #fef3c7 0%, #fde68a 30%, #f59e0b 80%, #d97706 100%)",
-          boxShadow: isThree
-            ? `0 2px 3px rgba(0,0,0,0.2),
-               0 6px 12px rgba(0,0,0,0.25),
-               0 10px 20px rgba(0,0,0,0.15),
-               inset 0 1px 2px rgba(255,255,255,0.4),
-               inset 0 -2px 4px rgba(0,0,0,0.15)`
-            : `0 2px 3px rgba(0,0,0,0.2),
-               0 6px 12px rgba(0,0,0,0.25),
-               0 10px 20px rgba(0,0,0,0.15),
-               inset 0 1px 2px rgba(255,255,255,0.5),
-               inset 0 -2px 4px rgba(0,0,0,0.1)`,
-        }}
-      >
-        {/* Highlight sheen */}
-        <div
-          className="absolute pointer-events-none"
-          style={{
-            top: "8%",
-            left: "12%",
-            width: "45%",
-            height: "35%",
-            background: "radial-gradient(ellipse, rgba(255,255,255,0.35) 0%, transparent 70%)",
-            borderRadius: "50%",
-          }}
-        />
-
-        {/* Pips */}
-        {pips.map(([px, py], i) => (
+      {/* Dice dots */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        {dots.map(([x, y], index) => (
           <div
-            key={i}
-            className="absolute rounded-full"
+            key={index}
+            className={cn(
+              dotSizes[size],
+              "absolute rounded-full",
+              isThree ? "bg-emerald-900" : "bg-amber-900"
+            )}
             style={{
-              width: ps,
-              height: ps,
-              left: `calc(50% + ${px * spread}px - ${ps / 2}px)`,
-              top: `calc(50% + ${py * spread}px - ${ps / 2}px)`,
-              background: isThree
-                ? "radial-gradient(circle, #052e16 60%, #064e3b 100%)"
-                : "radial-gradient(circle, #451a03 60%, #78350f 100%)",
-              boxShadow: isThree
-                ? "inset 0 1px 2px rgba(0,0,0,0.4), 0 0.5px 0 rgba(255,255,255,0.15)"
-                : "inset 0 1px 2px rgba(0,0,0,0.3), 0 0.5px 0 rgba(255,255,255,0.2)",
+              left: `${x}%`,
+              top: `${y}%`,
+              transform: "translate(-50%, -50%)",
             }}
           />
         ))}
@@ -143,45 +97,23 @@ export function Dice({
 
       {/* Locked indicator */}
       {isLocked && (
-        <div className="absolute -top-1 -right-1 w-4 h-4 bg-muted-foreground rounded-full flex items-center justify-center z-10">
+        <div className="absolute -top-1 -right-1 w-4 h-4 bg-muted-foreground rounded-full flex items-center justify-center">
           <Lock className="w-2.5 h-2.5 text-background" />
         </div>
       )}
 
-      {/* Kept indicator */}
+      {/* Kept indicator (not locked) */}
       {isKept && !isLocked && (
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
-          className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center z-10 shadow-md"
+          className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center"
         >
           <span className="text-[10px] font-bold text-emerald-900">✓</span>
         </motion.div>
       )}
     </motion.button>
   );
-}
-
-// Generate random scatter positions for dice
-function generateScatter(count: number, kept: number[], locked: number[]): { x: number; y: number; rotate: number }[] {
-  const positions: { x: number; y: number; rotate: number }[] = [];
-  for (let i = 0; i < count; i++) {
-    if (kept.includes(i) || locked.includes(i)) {
-      // Kept/locked dice get mild scatter
-      positions.push({
-        x: (Math.random() - 0.5) * 10,
-        y: (Math.random() - 0.5) * 6,
-        rotate: (Math.random() - 0.5) * 8,
-      });
-    } else {
-      positions.push({
-        x: (Math.random() - 0.5) * 60,
-        y: (Math.random() - 0.5) * 40,
-        rotate: (Math.random() - 0.5) * 30,
-      });
-    }
-  }
-  return positions;
 }
 
 interface DiceContainerProps {
@@ -201,20 +133,8 @@ export function DiceContainer({
   isRolling = false,
   disabled = false,
 }: DiceContainerProps) {
-  const [scatterPositions, setScatterPositions] = useState<{ x: number; y: number; rotate: number }[]>(
-    () => generateScatter(5, [], [])
-  );
-
-  // Re-scatter when dice values change (i.e., after a roll) but NOT when just toggling kept
-  const diceKey = dice.join(",");
-  useEffect(() => {
-    setScatterPositions(generateScatter(dice.length, keptIndices, lockedIndices));
-    // Only regenerate on dice value changes, not kept changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [diceKey]);
-
   return (
-    <div className="relative flex flex-wrap gap-2 justify-center items-center min-h-[100px] py-4 px-2">
+    <div className="flex flex-wrap gap-3 justify-center">
       {dice.map((value, index) => (
         <Dice
           key={index}
@@ -225,7 +145,6 @@ export function DiceContainer({
           onClick={() => onToggleKeep(index)}
           size="lg"
           disabled={disabled}
-          scatter={scatterPositions[index]}
         />
       ))}
     </div>

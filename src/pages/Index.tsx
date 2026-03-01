@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Users, Plus, ArrowRight, LogOut, Eye } from "lucide-react";
+import { Users, Plus, ArrowRight, LogOut, Eye, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -190,6 +190,15 @@ export default function Index() {
           Lowest score wins&nbsp;&nbsp;•&nbsp;&nbsp;Threes = Zero&nbsp;&nbsp;•&nbsp;&nbsp;For Exhibition Only
         </p>
         <div className="mt-3 flex items-center justify-center gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/how-to-play")}
+            className="text-muted-foreground/40 hover:text-muted-foreground text-xs"
+          >
+            <HelpCircle className="w-3 h-3 mr-1" />
+            Rules
+          </Button>
           <Button
             variant="ghost"
             size="sm"

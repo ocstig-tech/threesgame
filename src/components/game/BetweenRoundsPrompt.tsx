@@ -8,6 +8,8 @@ import { toast } from "sonner";
 interface BetweenRoundsPromptProps {
   isHost: boolean;
   betAmount: number;
+  wasTie: boolean;
+  potAmount: number;
   onStartNextRound: () => Promise<void>;
   onChangeBet: (newBet: number) => Promise<void>;
 }
@@ -15,6 +17,8 @@ interface BetweenRoundsPromptProps {
 export function BetweenRoundsPrompt({
   isHost,
   betAmount,
+  wasTie,
+  potAmount,
   onStartNextRound,
   onChangeBet,
 }: BetweenRoundsPromptProps) {
@@ -28,12 +32,26 @@ export function BetweenRoundsPrompt({
 
   return (
     <div className="mb-5 rounded-xl border border-border bg-secondary/30 p-4 text-center">
-      <p className="text-foreground font-medium">Round complete</p>
-      <p className="text-sm text-muted-foreground mt-1">
-        {isHost
-          ? "Start the next round when everyone is ready."
-          : "Waiting for the host to start the next round."}
-      </p>
+      {wasTie ? (
+        <>
+          <p className="text-xl font-bold text-primary">🤝 Push!</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            It's a tie! Everyone antes up again. Pot is now <span className="font-bold text-primary">{potAmount} chips</span>.
+          </p>
+          <p className="text-sm text-muted-foreground mt-1">
+            {isHost ? "Start the next round — same turn order, winner takes all." : "Waiting for host to start the next round."}
+          </p>
+        </>
+      ) : (
+        <>
+          <p className="text-foreground font-medium">Round complete</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            {isHost
+              ? "Start the next round when everyone is ready."
+              : "Waiting for the host to start the next round."}
+          </p>
+        </>
+      )}
 
       {isHost && (
         <div className="mt-4 space-y-3">

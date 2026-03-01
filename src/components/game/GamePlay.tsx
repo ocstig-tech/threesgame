@@ -12,10 +12,12 @@ import type { Database } from "@/integrations/supabase/types";
 import type { PublicPlayer } from "@/hooks/useGame";
 
 type Game = Database["public"]["Tables"]["games"]["Row"];
+type GameRound = Database["public"]["Tables"]["game_rounds"]["Row"];
 
 interface GamePlayProps {
   game: Game;
   players: PublicPlayer[];
+  rounds: GameRound[];
   currentPlayer: PublicPlayer | null;
   myPlayer: PublicPlayer | null;
   onRollDice: (keptIndices: number[], currentDice: number[]) => Promise<number[] | null>;
@@ -29,6 +31,7 @@ interface GamePlayProps {
 export function GamePlay({
   game,
   players,
+  rounds,
   currentPlayer,
   myPlayer,
   onRollDice,
@@ -131,6 +134,8 @@ export function GamePlay({
 
   const isBetweenRounds = (game.status as unknown as string) === "between_rounds";
   const isHost = myPlayer != null && myPlayer.name === game.host_name;
+  const lastRound = rounds.length > 0 ? rounds[rounds.length - 1] : null;
+  const lastRoundWasTie = lastRound?.was_tie ?? false;
 
   // Auto-end turn after 3 seconds when all dice are kept
   const [autoEndCountdown, setAutoEndCountdown] = useState<number | null>(null);
@@ -193,6 +198,8 @@ export function GamePlay({
             <BetweenRoundsPrompt
               isHost={isHost}
               betAmount={game.bet_amount}
+              wasTie={lastRoundWasTie}
+              potAmount={game.pot}
               onStartNextRound={onStartNextRound}
               onChangeBet={onChangeBet}
             />

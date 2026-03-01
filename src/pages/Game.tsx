@@ -87,6 +87,7 @@ export default function Game() {
     <GamePlay
       game={game}
       players={players}
+      rounds={rounds}
       currentPlayer={currentPlayer}
       myPlayer={myPlayer}
       onRollDice={rollDiceForTurn}

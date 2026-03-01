@@ -75,7 +75,7 @@ export default function Index() {
       y: 0
     }} className="w-full max-w-md">
         {/* Logo & Title */}
-        <div className="text-center mb-8 pt-[10vh]">
+        <div className="text-center mb-8 pt-[5vh]">
           <motion.div initial={{
           scale: 0,
           rotate: -180

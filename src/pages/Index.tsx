@@ -189,7 +189,7 @@ export default function Index() {
         <p className="text-xs sm:text-sm font-medium text-primary font-serif text-center mt-8 leading-relaxed">
           Lowest score wins&nbsp;&nbsp;•&nbsp;&nbsp;Threes = Zero&nbsp;&nbsp;•&nbsp;&nbsp;For Exhibition Only
         </p>
-        <div className="mt-3 flex items-center justify-center gap-3">
+        <div className="mt-3 flex items-center justify-center gap-3 flex-wrap">
           <Button
             variant="ghost"
             size="sm"
@@ -214,6 +214,14 @@ export default function Index() {
               {account.name}
             </Button>
           )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/privacy")}
+            className="text-muted-foreground/40 hover:text-muted-foreground text-xs"
+          >
+            Privacy
+          </Button>
         </div>
       </motion.div>
       

@@ -8,6 +8,7 @@ import Game from "./pages/Game";
 import Admin from "./pages/Admin";
 import Demo from "./pages/Demo";
 import HowToPlay from "./pages/HowToPlay";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/admin" element={<Admin />} />
           <Route path="/demo" element={<Demo />} />
           <Route path="/how-to-play" element={<HowToPlay />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

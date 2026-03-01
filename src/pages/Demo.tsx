@@ -235,16 +235,23 @@ export default function Demo() {
 
     const lowestScore = Math.min(...finished.map(p => p.current_score!));
     const winners = finished.filter(p => p.current_score === lowestScore);
-    const winner = winners[0];
-    const losers = finished.filter(p => p.id !== winner.id);
 
-    setPlayers(prev => prev.map(p => {
-      if (p.id === winner.id) return { ...p, total_earnings: p.total_earnings + BET_AMOUNT * losers.length };
-      if (losers.some(l => l.id === p.id)) return { ...p, total_earnings: p.total_earnings - BET_AMOUNT };
-      return p;
-    }));
+    if (winners.length > 1) {
+      // Tie/push — no chips change hands
+      const tiedNames = winners.map(w => w.name).join(" & ");
+      setMessage(`🤝 Push! ${tiedNames} tied with ${lowestScore} points. No chips exchanged.`);
+    } else {
+      const winner = winners[0];
+      const losers = finished.filter(p => p.id !== winner.id);
 
-    setMessage(`🏆 ${winner.name} wins with ${lowestScore} points! ${winner.name === "You" ? "Nice roll!" : ""}`);
+      setPlayers(prev => prev.map(p => {
+        if (p.id === winner.id) return { ...p, total_earnings: p.total_earnings + BET_AMOUNT * losers.length };
+        if (losers.some(l => l.id === p.id)) return { ...p, total_earnings: p.total_earnings - BET_AMOUNT };
+        return p;
+      }));
+
+      setMessage(`🏆 ${winner.name} wins with ${lowestScore} points! ${winner.name === "You" ? "Nice roll!" : ""}`);
+    }
   }, [phase, roundResolved]);
 
   const startNextRound = () => {

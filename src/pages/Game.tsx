@@ -52,7 +52,7 @@ export default function Game() {
     );
   }
 
-  const isHost = players.length > 0 && myPlayer != null && players[0]?.id === myPlayer.id;
+  const isHost = myPlayer != null && myPlayer.name === game.host_name;
 
   // Game finished - show settlement
   if (game.status === "finished") {

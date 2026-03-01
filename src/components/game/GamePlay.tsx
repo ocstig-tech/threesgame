@@ -130,7 +130,7 @@ export function GamePlay({
   );
 
   const isBetweenRounds = (game.status as unknown as string) === "between_rounds";
-  const isHost = players.length > 0 && myPlayer != null && players[0]?.id === myPlayer.id;
+  const isHost = myPlayer != null && myPlayer.name === game.host_name;
 
   // Auto-end turn after 3 seconds when all dice are kept
   const [autoEndCountdown, setAutoEndCountdown] = useState<number | null>(null);
@@ -355,7 +355,7 @@ export function GamePlay({
         </div>
 
         {/* End Game Button (host only) */}
-        {myPlayer && players[0]?.id === myPlayer.id && (
+        {isHost && (
           <div className="mt-8 text-center">
             <Button
               onClick={onEndGame}

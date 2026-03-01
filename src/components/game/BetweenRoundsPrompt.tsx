@@ -3,6 +3,7 @@ import { RotateCcw, Coins } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 
 interface BetweenRoundsPromptProps {
   isHost: boolean;
@@ -86,7 +87,17 @@ export function BetweenRoundsPrompt({
           )}
 
           <div className="flex justify-center">
-            <Button onClick={onStartNextRound} className="gold-glow" size="lg">
+            <Button
+              onClick={async () => {
+                try {
+                  await onStartNextRound();
+                } catch (err) {
+                  toast.error(err instanceof Error ? err.message : "Failed to start next round");
+                }
+              }}
+              className="gold-glow"
+              size="lg"
+            >
               <RotateCcw className="w-5 h-5 mr-2" />
               Start Next Round
             </Button>

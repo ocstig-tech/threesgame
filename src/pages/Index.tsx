@@ -75,7 +75,7 @@ export default function Index() {
       y: 0
     }} className="w-full max-w-md">
         {/* Logo & Title */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 pt-[10vh]">
           <motion.div initial={{
           scale: 0,
           rotate: -180
@@ -85,7 +85,7 @@ export default function Index() {
         }} transition={{
           type: "spring",
           duration: 0.8
-        }} className="w-20 h-20 mx-auto mb-4 rounded-2xl overflow-hidden">
+        }} className="w-24 h-24 mx-auto mb-4 rounded-2xl overflow-hidden">
             <img src={threesLogo} alt="Threes" className="w-full h-full object-cover" />
           </motion.div>
           <h1 className="text-4xl md:text-5xl font-bold text-primary mb-2 tracking-[0.3em]" style={{ fontFamily: "'Marcellus', serif", WebkitTextStroke: '1.5px hsl(0, 70%, 45%)', paintOrder: 'stroke fill' }}>

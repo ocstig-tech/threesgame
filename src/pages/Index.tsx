@@ -85,7 +85,7 @@ export default function Index() {
         }} transition={{
           type: "spring",
           duration: 0.8
-        }} className="w-36 h-36 mx-auto mb-4 rounded-2xl overflow-hidden">
+        }} className="w-44 h-44 mx-auto mb-4 rounded-2xl overflow-hidden">
             <img src={threesLogo} alt="Threes" className="w-full h-full object-cover" />
           </motion.div>
           <h1 className="text-4xl md:text-5xl font-bold text-primary mb-2 tracking-[0.3em]" style={{ fontFamily: "'Marcellus', serif", WebkitTextStroke: '1.5px hsl(0, 70%, 45%)', paintOrder: 'stroke fill' }}>

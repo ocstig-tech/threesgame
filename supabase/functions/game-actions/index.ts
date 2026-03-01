@@ -343,6 +343,7 @@ Deno.serve(async (req) => {
       const winners = finishedPlayers.filter((p) => p.current_score === lowestScore);
 
       if (winners.length > 1) {
+        // Push! Record the tied round, double the pot, replay with same order
         await supabase.from("game_rounds").insert({
           game_id,
           round_number: roundNumber,
@@ -350,13 +351,19 @@ Deno.serve(async (req) => {
           pot_amount: game.pot,
         });
 
+        // Everyone antes up again — pot increases
         const newPot = game.pot + players.length * game.bet_amount;
 
+        // Find current first player (lowest turn_order) to preserve turn order
+        const firstPlayer = players.reduce((a, b) =>
+          (a.turn_order || 999) < (b.turn_order || 999) ? a : b
+        );
+
+        // Reset player states for new round but keep turn_order
         for (const player of players) {
           await supabase
             .from("players")
             .update({
-              roll_off_value: null,
               kept_dice: [],
               rolls_remaining: 5,
               current_score: null,
@@ -365,9 +372,10 @@ Deno.serve(async (req) => {
             .eq("id", player.id);
         }
 
+        // Go to between_rounds so host can see the push and start next round
         await supabase
           .from("games")
-          .update({ status: "tie_breaker", pot: newPot, current_player_id: null })
+          .update({ status: "between_rounds", pot: newPot, current_player_id: firstPlayer.id })
           .eq("id", game_id);
 
         return json({ success: true, tie: true });
@@ -426,6 +434,15 @@ Deno.serve(async (req) => {
         .eq("game_id", game_id);
       if (!players) return json({ error: "Unable to complete action" }, 400);
 
+      // Check if last round was a tie (push) — if so, keep the accumulated pot
+      const { data: lastRounds } = await supabase
+        .from("game_rounds")
+        .select("was_tie")
+        .eq("game_id", game_id)
+        .order("round_number", { ascending: false })
+        .limit(1);
+      const wasPush = lastRounds && lastRounds.length > 0 && lastRounds[0].was_tie;
+
       for (const player of players) {
         await supabase
           .from("players")
@@ -451,11 +468,14 @@ Deno.serve(async (req) => {
         order++;
       }
 
+      // For pushes, keep the accumulated pot; otherwise reset to normal ante
+      const newPot = wasPush ? game.pot : players.length * game.bet_amount;
+
       await supabase
         .from("games")
         .update({
           status: "playing",
-          pot: players.length * game.bet_amount,
+          pot: newPot,
           current_player_id: startingPlayerId,
         })
         .eq("id", game_id);

@@ -140,12 +140,13 @@ export function useGame(roomCode: string | null) {
     }
   }, [roomCode, sessionId]);
 
-  // Set up realtime subscriptions
+  // Set up realtime subscriptions + polling fallback for reliability
   useEffect(() => {
     if (!roomCode) return;
 
     fetchGame();
 
+    // Primary: realtime subscription
     const channel = supabase
       .channel(`game-${roomCode}`)
       .on(
@@ -165,8 +166,14 @@ export function useGame(roomCode: string | null) {
       )
       .subscribe();
 
+    // Fallback: poll every 3s to catch missed realtime events
+    const pollInterval = setInterval(() => {
+      fetchGame();
+    }, 3000);
+
     return () => {
       supabase.removeChannel(channel);
+      clearInterval(pollInterval);
     };
   }, [roomCode, fetchGame]);
 

@@ -54,16 +54,24 @@ export function GamePlay({
   const currentScore = calculateScore(dice.filter((_, i) => keptIndices.includes(i)));
   const potentialScore = calculateScore(dice);
 
-  // Reset state when it becomes my turn
+  // Track which turn we've already initialized for, to avoid resetting mid-turn
+  const [initializedTurnPlayerId, setInitializedTurnPlayerId] = useState<string | null>(null);
+
+  // Reset state when it becomes my turn (only once per turn)
   useEffect(() => {
-    if (isMyTurn && myPlayer?.status === "rolling") {
+    if (isMyTurn && myPlayer?.status === "rolling" && game.current_player_id !== initializedTurnPlayerId) {
       setDice([0, 0, 0, 0, 0]);
       setKeptIndices([]);
       setLockedIndices([]);
       setRollsRemaining(myPlayer.rolls_remaining || 5);
       setHasRolledOnce(false);
+      setInitializedTurnPlayerId(game.current_player_id);
     }
-  }, [isMyTurn, myPlayer]);
+    // Clear initialized turn when it's no longer my turn
+    if (!isMyTurn && initializedTurnPlayerId) {
+      setInitializedTurnPlayerId(null);
+    }
+  }, [isMyTurn, game.current_player_id, initializedTurnPlayerId, myPlayer?.status]);
 
   const handleRoll = async () => {
     if (!isMyTurn || rollsRemaining <= 0 || isRolling) return;

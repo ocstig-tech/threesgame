@@ -145,7 +145,7 @@ export default function Index() {
                     </Button>)}
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Tap to add chips • Winner takes the pot each round
+                  Tap to add points • Winner takes the pool each round
                 </p>
               </div>
               <div className="flex gap-3 pt-2">

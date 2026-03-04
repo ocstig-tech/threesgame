@@ -135,11 +135,11 @@ export function Settlement({
             {sortedPlayers
               .filter((p) => (p.total_earnings || 0) < 0)
               .map((loser) => {
-                const owes = Math.abs(loser.total_earnings || 0);
+                const deficit = Math.abs(loser.total_earnings || 0);
                 return (
                   <li key={loser.id}>
-                    <span className="text-foreground">{loser.name}</span> owes{" "}
-                    <span className="text-primary font-medium">{owes} points</span>
+                    <span className="text-foreground">{loser.name}</span> is down{" "}
+                    <span className="text-primary font-medium">{deficit} points</span>
                   </li>
                 );
               })}

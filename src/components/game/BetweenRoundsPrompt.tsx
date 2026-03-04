@@ -57,7 +57,7 @@ export function BetweenRoundsPrompt({
         <div className="mt-4 space-y-3">
           {editingBet ? (
             <div className="flex items-center justify-center gap-2">
-              <Label className="text-sm whitespace-nowrap">Chips:</Label>
+              <Label className="text-sm whitespace-nowrap">Points:</Label>
               <Input
                 type="number"
                 min={0}

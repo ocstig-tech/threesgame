@@ -15,9 +15,9 @@ export default function HowToPlay() {
     },
     {
       icon: "🪙",
-      title: "The Wager",
+      title: "The Stakes",
       content:
-        "Before play begins, all players agree on a chip amount for the round — typically 2 to 100 chips. Every player deposits that amount into the shared pool. The winner of the round takes the entire pot.\n\nAll players must agree on the wager before the round starts.",
+        "Before play begins, all players agree on a point amount for the round — typically 2 to 100 points. Every player puts that amount into the shared pool. The winner of the round takes the entire pool.\n\nAll players must agree on the point amount before the round starts.",
     },
     {
       icon: "🎲",

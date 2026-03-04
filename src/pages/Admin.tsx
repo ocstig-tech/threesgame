@@ -349,7 +349,7 @@ export default function Admin() {
           <StatCard icon={Trophy} label="Rounds Played" value={overallStats.totalRoundsPlayed} />
           <StatCard
             icon={Coins}
-            label="Total Chips Won"
+            label="Total Points Won"
             value={overallStats.totalChipsWon}
             color="text-green-500"
           />

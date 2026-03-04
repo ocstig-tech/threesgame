@@ -130,7 +130,7 @@ export function Settlement({
 
         {/* Payment Instructions */}
         <div className="bg-secondary/30 rounded-xl p-4 mb-6">
-          <h3 className="font-medium text-foreground mb-2">To Settle Up:</h3>
+          <h3 className="font-medium text-foreground mb-2">Final Standings:</h3>
           <ul className="text-sm text-muted-foreground space-y-1">
             {sortedPlayers
               .filter((p) => (p.total_earnings || 0) < 0)

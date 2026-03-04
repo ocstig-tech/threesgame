@@ -290,7 +290,7 @@ export default function Demo() {
                 Demo Game
               </h1>
               <p className="text-sm text-muted-foreground">
-                Round {roundNumber} • Exhibition Mode
+                Round {roundNumber} • Demo Mode
               </p>
             </div>
           </div>

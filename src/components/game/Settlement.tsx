@@ -119,7 +119,7 @@ export function Settlement({
                         !isWinner && !isLoser && "text-muted-foreground"
                       )}
                     >
-                      {formatChips(earnings)} chips
+                      {formatChips(earnings)} points
                     </span>
                   </div>
                 </motion.div>

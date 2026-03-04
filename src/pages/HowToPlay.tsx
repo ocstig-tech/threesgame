@@ -42,7 +42,7 @@ export default function HowToPlay() {
       icon: "🏆",
       title: "Winning a Round",
       content:
-        "After all players have taken their turn, compare totals.\n\nThe player with the lowest score wins the round and takes all chips in the pool.\n\nMinimum score: 0 (five threes).\nMaximum score: 30 (five sixes).",
+        "After all players have taken their turn, compare totals.\n\nThe player with the lowest score wins the round and takes all points in the pool.\n\nMinimum score: 0 (five threes).\nMaximum score: 30 (five sixes).",
     },
     {
       icon: "🤝",

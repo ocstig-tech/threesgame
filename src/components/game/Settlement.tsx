@@ -52,7 +52,7 @@ export function Settlement({
             Game Over!
           </h1>
           <p className="text-muted-foreground">
-            {rounds.length} rounds played • {betAmount} chips per round
+            {rounds.length} rounds played • {betAmount} points per round
           </p>
         </div>
 

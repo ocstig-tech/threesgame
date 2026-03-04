@@ -132,7 +132,7 @@ export default function Index() {
             <h2 className="text-xl font-semibold text-foreground mb-6">Create a Game</h2>
             <form onSubmit={(e) => { e.preventDefault(); handleCreate(); }} className="space-y-4">
               <div>
-                <Label htmlFor="bet">Chips Per Round</Label>
+                <Label htmlFor="bet">Points Per Round</Label>
                 <div className="flex items-center gap-2 mt-1.5">
                   <Input id="bet" type="number" min={1} max={100} value={betAmount} onChange={e => setBetAmount(Math.max(1, Math.min(100, Number(e.target.value) || 1)))} className="text-center text-xl font-bold" />
                   <Button type="button" variant="outline" size="sm" onClick={() => setBetAmount(1)} className="text-xs px-2">

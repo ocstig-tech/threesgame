@@ -297,7 +297,7 @@ export default function Demo() {
           <div className="flex items-center gap-2 px-4 py-2 bg-primary/20 rounded-full mr-16">
             <Coins className="w-4 h-4 text-primary" />
             <span className="font-bold text-primary">{pot}</span>
-            <span className="text-xs text-muted-foreground">chips</span>
+            <span className="text-xs text-muted-foreground">points</span>
           </div>
         </div>
 

@@ -139,7 +139,7 @@ export function Settlement({
                 return (
                   <li key={loser.id}>
                     <span className="text-foreground">{loser.name}</span> owes{" "}
-                    <span className="text-primary font-medium">{owes} chips</span>
+                    <span className="text-primary font-medium">{owes} points</span>
                   </li>
                 );
               })}

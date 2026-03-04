@@ -100,7 +100,7 @@ export function BetweenRoundsPrompt({
               className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors underline"
             >
               <Coins className="w-3.5 h-3.5" />
-              Change ante ({betAmount} chips)
+              Change points per round ({betAmount})
             </button>
           )}
 

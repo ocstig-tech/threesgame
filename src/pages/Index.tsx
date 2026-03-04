@@ -187,7 +187,7 @@ export default function Index() {
           </motion.div>}
 
         <p className="text-xs sm:text-sm font-medium text-primary font-serif text-center mt-8 leading-relaxed">
-          Lowest score wins&nbsp;&nbsp;•&nbsp;&nbsp;Threes = Zero&nbsp;&nbsp;•&nbsp;&nbsp;For Exhibition Only
+          Lowest score wins&nbsp;&nbsp;•&nbsp;&nbsp;Threes = Zero&nbsp;&nbsp;•&nbsp;&nbsp;For Entertainment Only
         </p>
         <div className="mt-3 flex items-center justify-center gap-3 flex-wrap">
           <Button

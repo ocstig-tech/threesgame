@@ -349,7 +349,7 @@ export default function Admin() {
           <StatCard icon={Trophy} label="Rounds Played" value={overallStats.totalRoundsPlayed} />
           <StatCard
             icon={Coins}
-            label="Total Chips Won"
+            label="Total Points Won"
             value={overallStats.totalChipsWon}
             color="text-green-500"
           />
@@ -433,7 +433,7 @@ export default function Admin() {
                       <div className="flex gap-3 mt-0.5 text-xs text-muted-foreground">
                         <span>{s?.games_played ?? 0} games</span>
                         <span className={(s?.total_earnings ?? 0) >= 0 ? "text-green-500" : "text-destructive"}>
-                          {(s?.total_earnings ?? 0) >= 0 ? "+" : ""}{s?.total_earnings ?? 0} chips
+                          {(s?.total_earnings ?? 0) >= 0 ? "+" : ""}{s?.total_earnings ?? 0} points
                         </span>
                         {s && s.rounds_played > 0 && (
                           <span className="text-primary">{winRate}% win</span>

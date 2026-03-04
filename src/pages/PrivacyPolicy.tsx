@@ -51,7 +51,7 @@ export default function PrivacyPolicy() {
           <section className="space-y-2">
             <h2 className="text-lg font-semibold">5. Children's Privacy</h2>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              THR33s is not directed to children under the age of 13. We do not knowingly collect personal information from children under 13. If you believe we have inadvertently collected information from a child under 13, please contact us immediately and we will delete it.
+              THR33s is a game designed for entertainment purposes only and is not directed to children under the age of 13. We do not knowingly collect personal information from children under 13. If you believe we have inadvertently collected information from a child under 13, please contact us immediately and we will delete it.
             </p>
           </section>
 

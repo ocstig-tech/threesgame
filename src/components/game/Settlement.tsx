@@ -52,7 +52,7 @@ export function Settlement({
             Game Over!
           </h1>
           <p className="text-muted-foreground">
-            {rounds.length} rounds played • {betAmount} chips per round
+            {rounds.length} rounds played • {betAmount} points per round
           </p>
         </div>
 
@@ -69,7 +69,7 @@ export function Settlement({
               {biggestWinner.name}
             </p>
             <p className="text-3xl font-bold text-emerald-400 mt-2">
-              {formatChips(biggestWinner.total_earnings)} chips
+              {formatChips(biggestWinner.total_earnings)} points
             </p>
           </motion.div>
         )}
@@ -119,7 +119,7 @@ export function Settlement({
                         !isWinner && !isLoser && "text-muted-foreground"
                       )}
                     >
-                      {formatChips(earnings)} chips
+                      {formatChips(earnings)} points
                     </span>
                   </div>
                 </motion.div>
@@ -139,7 +139,7 @@ export function Settlement({
                 return (
                   <li key={loser.id}>
                     <span className="text-foreground">{loser.name}</span> owes{" "}
-                    <span className="text-primary font-medium">{owes} chips</span>
+                    <span className="text-primary font-medium">{owes} points</span>
                   </li>
                 );
               })}

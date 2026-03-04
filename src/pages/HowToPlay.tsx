@@ -15,9 +15,9 @@ export default function HowToPlay() {
     },
     {
       icon: "🪙",
-      title: "The Wager",
+      title: "The Stakes",
       content:
-        "Before play begins, all players agree on a chip amount for the round — typically 2 to 100 chips. Every player deposits that amount into the shared pool. The winner of the round takes the entire pot.\n\nAll players must agree on the wager before the round starts.",
+        "Before play begins, all players agree on a point amount for the round — typically 2 to 100 points. Every player puts that amount into the shared pool. The winner of the round takes the entire pool.\n\nAll players must agree on the point amount before the round starts.",
     },
     {
       icon: "🎲",
@@ -42,13 +42,13 @@ export default function HowToPlay() {
       icon: "🏆",
       title: "Winning a Round",
       content:
-        "After all players have taken their turn, compare totals.\n\nThe player with the lowest score wins the round and takes all chips in the pool.\n\nMinimum score: 0 (five threes).\nMaximum score: 30 (five sixes).",
+        "After all players have taken their turn, compare totals.\n\nThe player with the lowest score wins the round and takes all points in the pool.\n\nMinimum score: 0 (five threes).\nMaximum score: 30 (five sixes).",
     },
     {
       icon: "🤝",
       title: "Tie-Breaks",
       content:
-        "If two or more players share the lowest score, it's a tie. All players must deposit an additional chip amount equal to the original wager into the pool. Everyone then plays a fresh round. The winner of the tie-break round takes the entire accumulated pot.",
+        "If two or more players share the lowest score, it's a tie. All players must add an additional point amount equal to the original stake into the pool. Everyone then plays a fresh round. The winner of the tie-break round takes the entire accumulated pool.",
     },
   ];
 

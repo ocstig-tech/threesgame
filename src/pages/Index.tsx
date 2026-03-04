@@ -33,7 +33,7 @@ export default function Index() {
   const handleCreate = async () => {
     if (!account) return;
     if (betAmount < 1 || betAmount > 100) {
-      toast.error("Bet must be between 1 and 100 chips");
+      toast.error("Points must be between 1 and 100");
       return;
     }
     setIsLoading(true);
@@ -132,7 +132,7 @@ export default function Index() {
             <h2 className="text-xl font-semibold text-foreground mb-6">Create a Game</h2>
             <form onSubmit={(e) => { e.preventDefault(); handleCreate(); }} className="space-y-4">
               <div>
-                <Label htmlFor="bet">Chips Per Round</Label>
+                <Label htmlFor="bet">Points Per Round</Label>
                 <div className="flex items-center gap-2 mt-1.5">
                   <Input id="bet" type="number" min={1} max={100} value={betAmount} onChange={e => setBetAmount(Math.max(1, Math.min(100, Number(e.target.value) || 1)))} className="text-center text-xl font-bold" />
                   <Button type="button" variant="outline" size="sm" onClick={() => setBetAmount(1)} className="text-xs px-2">
@@ -145,7 +145,7 @@ export default function Index() {
                     </Button>)}
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Tap to add chips • Winner takes the pot each round
+                  Tap to add points • Winner takes the pool each round
                 </p>
               </div>
               <div className="flex gap-3 pt-2">
@@ -187,7 +187,7 @@ export default function Index() {
           </motion.div>}
 
         <p className="text-xs sm:text-sm font-medium text-primary font-serif text-center mt-8 leading-relaxed">
-          Lowest score wins&nbsp;&nbsp;•&nbsp;&nbsp;Threes = Zero&nbsp;&nbsp;•&nbsp;&nbsp;For Exhibition Only
+          Lowest score wins&nbsp;&nbsp;•&nbsp;&nbsp;Threes = Zero&nbsp;&nbsp;•&nbsp;&nbsp;For Entertainment Only
         </p>
         <div className="mt-3 flex items-center justify-center gap-3 flex-wrap">
           <Button

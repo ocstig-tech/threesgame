@@ -36,7 +36,7 @@ export function BetweenRoundsPrompt({
         <>
           <p className="text-xl font-bold text-primary">🤝 Push!</p>
           <p className="text-sm text-muted-foreground mt-1">
-            It's a tie! Everyone antes up again. Pot is now <span className="font-bold text-primary">{potAmount} chips</span>.
+            It's a tie! Everyone adds to the pool again. Pool is now <span className="font-bold text-primary">{potAmount} points</span>.
           </p>
           <p className="text-sm text-muted-foreground mt-1">
             {isHost ? "Start the next round — same turn order, winner takes all." : "Waiting for host to start the next round."}
@@ -57,7 +57,7 @@ export function BetweenRoundsPrompt({
         <div className="mt-4 space-y-3">
           {editingBet ? (
             <div className="flex items-center justify-center gap-2">
-              <Label className="text-sm whitespace-nowrap">Chips:</Label>
+              <Label className="text-sm whitespace-nowrap">Points:</Label>
               <Input
                 type="number"
                 min={0}
@@ -100,7 +100,7 @@ export function BetweenRoundsPrompt({
               className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors underline"
             >
               <Coins className="w-3.5 h-3.5" />
-              Change ante ({betAmount} chips)
+              Change points per round ({betAmount})
             </button>
           )}
 

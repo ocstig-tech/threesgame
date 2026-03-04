@@ -94,7 +94,7 @@ export function GameLobby({
               {players.length} Players
             </span>
             <span className="px-3 py-1 bg-primary/20 text-primary rounded-full font-semibold">
-              {game.bet_amount} chips
+              {game.bet_amount} points
             </span>
           </div>
         </div>

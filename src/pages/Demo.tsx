@@ -237,9 +237,9 @@ export default function Demo() {
     const winners = finished.filter(p => p.current_score === lowestScore);
 
     if (winners.length > 1) {
-      // Tie/push — no chips change hands
+      // Tie/push — no points change hands
       const tiedNames = winners.map(w => w.name).join(" & ");
-      setMessage(`🤝 Push! ${tiedNames} tied with ${lowestScore} points. No chips exchanged.`);
+      setMessage(`🤝 Push! ${tiedNames} tied with ${lowestScore} points. No points exchanged.`);
     } else {
       const winner = winners[0];
       const losers = finished.filter(p => p.id !== winner.id);
@@ -290,14 +290,14 @@ export default function Demo() {
                 Demo Game
               </h1>
               <p className="text-sm text-muted-foreground">
-                Round {roundNumber} • Exhibition Mode
+                Round {roundNumber} • Demo Mode
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2 px-4 py-2 bg-primary/20 rounded-full mr-16">
             <Coins className="w-4 h-4 text-primary" />
             <span className="font-bold text-primary">{pot}</span>
-            <span className="text-xs text-muted-foreground">chips</span>
+            <span className="text-xs text-muted-foreground">points</span>
           </div>
         </div>
 

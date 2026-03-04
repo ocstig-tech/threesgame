@@ -379,7 +379,7 @@ export function GamePlay({
               className="text-muted-foreground"
             >
               <Trophy className="w-4 h-4 mr-2" />
-              End Game & Settle Up
+              End Game & See Results
             </Button>
           </div>
         )}

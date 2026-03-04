@@ -15,7 +15,7 @@ export default function HowToPlay() {
     },
     {
       icon: "🪙",
-      title: "The Stakes",
+      title: "The Points",
       content:
         "Before play begins, all players agree on a point amount for the round — typically 2 to 100 points. Every player puts that amount into the shared pool. The winner of the round takes the entire pool.\n\nAll players must agree on the point amount before the round starts.",
     },

@@ -433,7 +433,7 @@ export default function Admin() {
                       <div className="flex gap-3 mt-0.5 text-xs text-muted-foreground">
                         <span>{s?.games_played ?? 0} games</span>
                         <span className={(s?.total_earnings ?? 0) >= 0 ? "text-green-500" : "text-destructive"}>
-                          {(s?.total_earnings ?? 0) >= 0 ? "+" : ""}{s?.total_earnings ?? 0} chips
+                          {(s?.total_earnings ?? 0) >= 0 ? "+" : ""}{s?.total_earnings ?? 0} points
                         </span>
                         {s && s.rounds_played > 0 && (
                           <span className="text-primary">{winRate}% win</span>

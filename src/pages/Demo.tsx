@@ -237,9 +237,9 @@ export default function Demo() {
     const winners = finished.filter(p => p.current_score === lowestScore);
 
     if (winners.length > 1) {
-      // Tie/push — no chips change hands
+      // Tie/push — no points change hands
       const tiedNames = winners.map(w => w.name).join(" & ");
-      setMessage(`🤝 Push! ${tiedNames} tied with ${lowestScore} points. No chips exchanged.`);
+      setMessage(`🤝 Push! ${tiedNames} tied with ${lowestScore} points. No points exchanged.`);
     } else {
       const winner = winners[0];
       const losers = finished.filter(p => p.id !== winner.id);

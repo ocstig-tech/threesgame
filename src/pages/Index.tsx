@@ -33,7 +33,7 @@ export default function Index() {
   const handleCreate = async () => {
     if (!account) return;
     if (betAmount < 1 || betAmount > 100) {
-      toast.error("Bet must be between 1 and 100 chips");
+      toast.error("Points must be between 1 and 100");
       return;
     }
     setIsLoading(true);

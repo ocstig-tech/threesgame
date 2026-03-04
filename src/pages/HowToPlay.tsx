@@ -48,7 +48,7 @@ export default function HowToPlay() {
       icon: "🤝",
       title: "Tie-Breaks",
       content:
-        "If two or more players share the lowest score, it's a tie. All players must deposit an additional chip amount equal to the original wager into the pool. Everyone then plays a fresh round. The winner of the tie-break round takes the entire accumulated pot.",
+        "If two or more players share the lowest score, it's a tie. All players must add an additional point amount equal to the original stake into the pool. Everyone then plays a fresh round. The winner of the tie-break round takes the entire accumulated pool.",
     },
   ];
 

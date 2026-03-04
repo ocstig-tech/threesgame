@@ -69,7 +69,7 @@ export function Settlement({
               {biggestWinner.name}
             </p>
             <p className="text-3xl font-bold text-emerald-400 mt-2">
-              {formatChips(biggestWinner.total_earnings)} chips
+              {formatChips(biggestWinner.total_earnings)} points
             </p>
           </motion.div>
         )}
